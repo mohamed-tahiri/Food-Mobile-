@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { orders } from '@/data/dataMocket';
-import CardCommand from '@/components/ui/CardCommand';
+import CardCommand from '@/components/ui/card/CardCommand';
 
 export default function OrdersScreen() {
   return (
@@ -10,6 +10,8 @@ export default function OrdersScreen() {
       <FlatList
         data={orders}
         keyExtractor={(order) => order.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <CardCommand item={item} />
         )}
@@ -19,6 +21,19 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FDFDFD', padding: 20, paddingTop: 60 },
-  title: { fontSize: 26, fontWeight: 'bold', marginBottom: 20 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#FDFDFD', 
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 60 
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 100, // Espace pour la TabBar
+  }
 });

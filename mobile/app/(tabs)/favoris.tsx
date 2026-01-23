@@ -2,9 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { Heart } from 'lucide-react-native';
 import { favorites } from '@/data/dataMocket';
-import CardRestaurant from '@/components/ui/CardRestaurant';
-
-
+import CardRestaurant from '@/components/ui/card/CardRestaurant';
 
 export default function FavoritesScreen() {
   return (
@@ -19,7 +17,7 @@ export default function FavoritesScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
         renderItem={({ item }) => (
-          <CardRestaurant key={item.id} resto={item} />
+          <CardRestaurant resto={item} />
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

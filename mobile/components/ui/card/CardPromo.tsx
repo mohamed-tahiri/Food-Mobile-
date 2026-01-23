@@ -1,13 +1,7 @@
 
+import { Offer } from '@/types/offer';
 import { Tag } from 'lucide-react-native';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-
-interface Offer {
- id: string;
- title: string;
- sub: string;
- color: string;
-}
 
 interface CardPromoProps {
     offer: Offer;
