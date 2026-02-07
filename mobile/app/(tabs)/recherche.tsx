@@ -12,17 +12,16 @@ import { cuisines, restaurants } from '@/data/dataMocket';
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
 import { Resto } from '@/types/resto';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import CardCuisineItem from '@/components/ui/card/CardCuisineItem';
 
 export default function SearchScreen() {
     const [searchText, setSearchText] = useState('');
     const [filteredRestos, setFilteredRestos] = useState<Resto[]>([]);
 
-    // 1. Couleurs thématiques
     const backgroundColor = useThemeColor({}, 'background');
-    const headerColor = useThemeColor({}, 'tabBar'); // Blanc en light, noir/anthracite en dark
+    const headerColor = useThemeColor({}, 'tabBar'); 
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
-    const cardColor = useThemeColor({}, 'card');
     const primaryColor = useThemeColor({}, 'primary');
     const borderColor = useThemeColor({}, 'border');
 
@@ -119,12 +118,7 @@ export default function SearchScreen() {
                     <>
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
-                                <Text
-                                    style={[
-                                        styles.sectionTitle,
-                                        { color: textColor },
-                                    ]}
-                                >
+                                <Text style={[ styles.sectionTitle, { color: textColor }]}>
                                     Récents
                                 </Text>
                                 <TouchableOpacity>
@@ -138,27 +132,11 @@ export default function SearchScreen() {
                                     (item, i) => (
                                         <TouchableOpacity
                                             key={i}
-                                            style={[
-                                                styles.chip,
-                                                {
-                                                    backgroundColor:
-                                                        headerColor,
-                                                    borderColor: borderColor,
-                                                },
-                                            ]}
+                                            style={[ styles.chip, { backgroundColor: headerColor, borderColor: borderColor }]}
                                             onPress={() => setSearchText(item)}
                                         >
-                                            <History
-                                                size={14}
-                                                color={primaryColor}
-                                                style={{ marginRight: 6 }}
-                                            />
-                                            <Text
-                                                style={[
-                                                    styles.chipText,
-                                                    { color: textColor },
-                                                ]}
-                                            >
+                                            <History size={14} color={primaryColor} style={{ marginRight: 6 }} />
+                                            <Text style={[ styles.chipText, { color: textColor }]}>
                                                 {item}
                                             </Text>
                                         </TouchableOpacity>
@@ -181,39 +159,11 @@ export default function SearchScreen() {
                             </View>
                             <View style={styles.grid}>
                                 {cuisines.map((item) => (
-                                    <TouchableOpacity
+                                    <CardCuisineItem
                                         key={item.id}
-                                        style={[
-                                            styles.gridItem,
-                                            {
-                                                backgroundColor: headerColor,
-                                                borderColor: borderColor,
-                                            },
-                                        ]}
-                                        onPress={() => setSearchText(item.name)}
-                                    >
-                                        <View
-                                            style={[
-                                                styles.iconCircle,
-                                                {
-                                                    backgroundColor:
-                                                        backgroundColor,
-                                                },
-                                            ]}
-                                        >
-                                            <Text style={styles.gridIcon}>
-                                                {item.icon}
-                                            </Text>
-                                        </View>
-                                        <Text
-                                            style={[
-                                                styles.gridName,
-                                                { color: textColor },
-                                            ]}
-                                        >
-                                            {item.name}
-                                        </Text>
-                                    </TouchableOpacity>
+                                        item={item}
+                                        setSearchText={setSearchText}
+                                    />
                                 ))}
                             </View>
                         </View>
@@ -226,66 +176,21 @@ export default function SearchScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: {
-        paddingTop: 60,
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        // On enlève le backgroundColor fixe
-    },
+    header: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 20 },
     title: { fontSize: 28, fontWeight: 'bold', marginBottom: 15 },
     searchContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    searchBar: {
-        flex: 1,
-        flexDirection: 'row',
-        padding: 12,
-        borderRadius: 15,
-        alignItems: 'center',
-    },
+    searchBar: { flex: 1, flexDirection: 'row', padding: 12, borderRadius: 15, alignItems: 'center' },
     input: { flex: 1, marginLeft: 10, fontSize: 16 },
     filterBtn: { padding: 12, borderRadius: 15, elevation: 2 },
     scrollContent: { paddingBottom: 100 },
     section: { marginTop: 25, paddingHorizontal: 20 },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     sectionTitle: { fontSize: 18, fontWeight: 'bold' },
     clearAllText: { color: '#FF6B35', fontSize: 14, fontWeight: '500' },
     chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    chip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderRadius: 25,
-        elevation: 1,
-    },
+    chip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 25, elevation: 1 },
     chipText: { fontWeight: '500' },
-    grid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-    },
-    gridItem: {
-        width: '48%',
-        padding: 20,
-        borderRadius: 25,
-        alignItems: 'center',
-        marginBottom: 15,
-        elevation: 2,
-    },
-    iconCircle: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    gridIcon: { fontSize: 30 },
-    gridName: { fontWeight: '700' },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between',},
     resultsSection: { paddingHorizontal: 20, marginTop: 20 },
     resultsCount: { fontSize: 14, marginBottom: 20 },
     emptyState: { alignItems: 'center', marginTop: 50 },

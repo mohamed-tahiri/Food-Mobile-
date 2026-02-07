@@ -13,10 +13,12 @@ import { ChevronLeft, Star, Clock } from 'lucide-react-native';
 import { menuItems } from '@/data/dataMocket';
 import CardMenuItem from '@/components/ui/card/CardMenuItem';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useCart } from '@/context/CartContext';
 
 const { width } = Dimensions.get('window');
 
 export default function RestaurantDetail() {
+    const { totalItems, totalPrice } = useCart();
     const { name, imageUrl } = useLocalSearchParams();
     const router = useRouter();
 
@@ -31,7 +33,6 @@ export default function RestaurantDetail() {
         <View style={[styles.container, { backgroundColor }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            {/* HEADER IMAGE */}
             <View style={styles.imageHeader}>
                 <Image
                     source={{
@@ -43,7 +44,6 @@ export default function RestaurantDetail() {
                     resizeMode="cover"
                 />
                 <View style={styles.overlay} />
-                {/* Bouton retour s'adapte au fond de l'image (souvent sombre) */}
                 <TouchableOpacity
                     style={[
                         styles.backBtn,
@@ -108,19 +108,26 @@ export default function RestaurantDetail() {
                 ))}
             </ScrollView>
 
-            {/* Panier Flottant - Le orange reste la couleur d'action principale */}
-            <View style={styles.cartFooter}>
-                <TouchableOpacity
-                    style={[styles.cartBtn, { backgroundColor: primaryColor }]}
-                    activeOpacity={0.9}
-                >
-                    <View style={styles.cartBadge}>
-                        <Text style={styles.cartBadgeText}>2</Text>
-                    </View>
-                    <Text style={styles.cartBtnText}>Voir le panier</Text>
-                    <Text style={styles.cartTotalPrice}>24.50 €</Text>
-                </TouchableOpacity>
-            </View>
+
+            {totalItems > 0 && (
+                <View style={styles.cartFooter}>
+                    <TouchableOpacity
+                        style={[styles.cartBtn, { backgroundColor: primaryColor }]}
+                        activeOpacity={0.9}
+                    >
+                        <View style={styles.cartBadge}>
+                            <Text style={styles.cartBadgeText}>{totalItems}</Text>
+                        </View>
+                        <TouchableOpacity
+                            activeOpacity={0.9}
+                            onPress={() => router.push('/cart/cart')} 
+                        >
+                            <Text style={styles.cartBtnText}>Voir le panier</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.cartTotalPrice}>{totalPrice.toFixed(2)} €</Text>
+                    </TouchableOpacity>
+                </View>
+            )} 
         </View>
     );
 }
