@@ -1,21 +1,23 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, StyleSheet } from 'react-native';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { IconSymbol } from '@/components/icon/icon-symbol';
 
 export default function TabLayout() {
-    const activeColor = '#FF6B35'; 
+    // 1. Récupération des couleurs dynamiques
+    const activeColor = useThemeColor({}, 'primary');
+    const inactiveColor = useThemeColor({}, 'textMuted');
+    const tabBarBg = useThemeColor({}, 'tabBar');
 
     return (
         <Tabs
             screenOptions={{
                 tabBarActiveTintColor: activeColor,
-                tabBarInactiveTintColor: '#999',
+                tabBarInactiveTintColor: inactiveColor,
                 headerShown: false,
-                tabBarButton: HapticTab,
-                tabBarStyle: styles.tabBar,
+                // On applique la couleur de fond dynamique ici
+                tabBarStyle: [styles.tabBar, { backgroundColor: tabBarBg }],
                 tabBarLabelStyle: styles.tabBarLabel,
             }}
         >
@@ -80,7 +82,7 @@ const styles = StyleSheet.create({
     tabBar: {
         position: 'absolute',
         borderTopWidth: 0,
-        backgroundColor: '#FFFFFF',
+        // backgroundColor: '#FFFFFF', <-- Supprimé car géré dynamiquement plus haut
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
         height: Platform.OS === 'ios' ? 90 : 70,
@@ -89,7 +91,7 @@ const styles = StyleSheet.create({
         // Ombre pour iOS
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.1, // Un peu plus d'opacité pour que l'ombre soit visible
         shadowRadius: 10,
         // Ombre pour Android
         elevation: 20,
