@@ -1,8 +1,10 @@
 import React from 'react';
 import { Plus } from 'lucide-react-native';
 import { TouchableOpacity, StyleSheet, Text, View, Image } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { MenuItem } from '@/types/menuItem';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useCart } from '@/context/CartContext';
 
 interface CardMenuItemProps {
     item: MenuItem;
@@ -10,11 +12,18 @@ interface CardMenuItemProps {
 }
 
 export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
-    // 1. Récupération des couleurs dynamiques
+    const { addToCart } = useCart();
+    
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
-    const backgroundColor = useThemeColor({}, 'background'); // Fond derrière la carte
+    const backgroundColor = useThemeColor({}, 'background');
     const primaryColor = useThemeColor({}, 'primary');
+
+    const handleAdd = () => {
+        addToCart(item);
+        // Petite vibration pour le feeling "Premium"
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    };
 
     return (
         <TouchableOpacity
@@ -48,6 +57,7 @@ export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
                         },
                     ]}
                     activeOpacity={0.8}
+                    onPress={handleAdd}
                 >
                     <Plus size={20} color="#FFF" />
                 </TouchableOpacity>

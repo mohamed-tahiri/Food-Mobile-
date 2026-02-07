@@ -6,13 +6,14 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 interface CardCategoryProps {
     cat: Category;
     isSelected?: boolean;
+    setSelectedCategory: (catName: string | null) => void;
 }
 
 export default function CardCategory({
     cat,
-    isSelected = false,
+    isSelected = false, 
+    setSelectedCategory
 }: CardCategoryProps) {
-    // 1. Récupération des couleurs du thème
     const backgroundColor = useThemeColor({}, 'background');
     const cardColor = useThemeColor({}, 'card');
     const textColor = useThemeColor({}, 'text');
@@ -31,13 +32,14 @@ export default function CardCategory({
                       }
                     : { backgroundColor: cardColor, borderColor: borderColor },
             ]}
+            onPress={() => setSelectedCategory(isSelected ? null : cat.name)}
         >
             <View
                 style={[
                     styles.iconWrapper,
                     isSelected
                         ? styles.iconWrapperActive
-                        : { backgroundColor: backgroundColor }, // Fond de l'icône s'adapte au thème
+                        : { backgroundColor: backgroundColor }, 
                 ]}
             >
                 <Text style={styles.catIcon}>{cat.icon}</Text>
@@ -45,7 +47,7 @@ export default function CardCategory({
             <Text
                 style={[
                     styles.catName,
-                    isSelected ? styles.catNameActive : { color: textColor }, // Texte s'adapte au thème
+                    isSelected ? styles.catNameActive : { color: textColor }, 
                 ]}
             >
                 {cat.name}

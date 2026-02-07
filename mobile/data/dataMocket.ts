@@ -26,23 +26,23 @@ export const cuisines = [
 
 export const menuItems = [
     {
-        id: 1,
+        id: '1',
         name: 'Double Cheese Burger',
-        price: '12.90',
+        price: 12.90,
         desc: 'Bœuf grillé, double cheddar, cornichons, sauce secrète.',
         img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200',
     },
     {
-        id: 2,
+        id: '2',
         name: 'Classic Burger',
-        price: '10.50',
+        price: 10.50,
         desc: 'Bœuf, salade, tomate, oignons rouges, ketchup.',
         img: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=200',
     },
     {
-        id: 3,
+        id: '3',
         name: 'Frites Maison (Large)',
-        price: '4.50',
+        price: 4.50,
         desc: 'Pommes de terre fraîches, sel de mer.',
         img: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200',
     },
