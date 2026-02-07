@@ -1,6 +1,6 @@
+import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 export const unstable_settings = {
@@ -10,14 +10,15 @@ export const unstable_settings = {
 export default function RootLayout() {
     return (
         <ThemeProvider>
-            <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                    name="modal"
-                    options={{ presentation: 'modal', title: 'Modal' }}
-                />
-            </Stack>
-            <StatusBar style="auto" />
+            <CartProvider>
+                <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen
+                        name="modal"
+                        options={{ presentation: 'modal', title: 'Modal' }}
+                    />
+                </Stack>
+            </CartProvider>
         </ThemeProvider>
     );
 }
