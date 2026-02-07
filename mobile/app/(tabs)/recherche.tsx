@@ -11,10 +11,20 @@ import { Search, History, TrendingUp, Filter, X } from 'lucide-react-native';
 import { cuisines, restaurants } from '@/data/dataMocket';
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
 import { Resto } from '@/types/resto';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 export default function SearchScreen() {
     const [searchText, setSearchText] = useState('');
     const [filteredRestos, setFilteredRestos] = useState<Resto[]>([]);
+
+    // 1. Couleurs thématiques
+    const backgroundColor = useThemeColor({}, 'background');
+    const headerColor = useThemeColor({}, 'tabBar'); // Blanc en light, noir/anthracite en dark
+    const textColor = useThemeColor({}, 'text');
+    const textMuted = useThemeColor({}, 'textMuted');
+    const cardColor = useThemeColor({}, 'card');
+    const primaryColor = useThemeColor({}, 'primary');
+    const borderColor = useThemeColor({}, 'border');
 
     useEffect(() => {
         if (searchText.trim().length > 0) {
@@ -31,32 +41,47 @@ export default function SearchScreen() {
         }
     }, [searchText]);
 
-    const clearSearch = () => {
-        setSearchText('');
-    };
+    const clearSearch = () => setSearchText('');
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor }]}>
             {/* HEADER */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Rechercher</Text>
+            <View style={[styles.header, { backgroundColor: headerColor }]}>
+                <Text style={[styles.title, { color: textColor }]}>
+                    Rechercher
+                </Text>
                 <View style={styles.searchContainer}>
-                    <View style={styles.searchBar}>
-                        <Search size={20} color="#999" />
+                    <View
+                        style={[
+                            styles.searchBar,
+                            {
+                                backgroundColor: backgroundColor,
+                                borderColor: borderColor,
+                                borderWidth: 1,
+                            },
+                        ]}
+                    >
+                        <Search size={20} color={textMuted} />
                         <TextInput
                             placeholder="Restaurants ou plats..."
-                            style={styles.input}
+                            placeholderTextColor={textMuted}
+                            style={[styles.input, { color: textColor }]}
                             value={searchText}
                             onChangeText={setSearchText}
                             autoFocus={false}
                         />
                         {searchText.length > 0 && (
                             <TouchableOpacity onPress={clearSearch}>
-                                <X size={18} color="#999" />
+                                <X size={18} color={textMuted} />
                             </TouchableOpacity>
                         )}
                     </View>
-                    <TouchableOpacity style={styles.filterBtn}>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterBtn,
+                            { backgroundColor: primaryColor },
+                        ]}
+                    >
                         <Filter size={20} color="#FFF" />
                     </TouchableOpacity>
                 </View>
@@ -67,9 +92,10 @@ export default function SearchScreen() {
                 contentContainerStyle={styles.scrollContent}
             >
                 {searchText.length > 0 ? (
-                    /* ÉTAT : RÉSULTATS DE RECHERCHE */
                     <View style={styles.resultsSection}>
-                        <Text style={styles.resultsCount}>
+                        <Text
+                            style={[styles.resultsCount, { color: textMuted }]}
+                        >
                             {filteredRestos.length} résultats trouvés
                         </Text>
                         {filteredRestos.map((resto) => (
@@ -77,7 +103,12 @@ export default function SearchScreen() {
                         ))}
                         {filteredRestos.length === 0 && (
                             <View style={styles.emptyState}>
-                                <Text style={styles.emptyText}>
+                                <Text
+                                    style={[
+                                        styles.emptyText,
+                                        { color: textMuted },
+                                    ]}
+                                >
                                     Aucun restaurant ne correspond à votre
                                     recherche.
                                 </Text>
@@ -85,11 +116,17 @@ export default function SearchScreen() {
                         )}
                     </View>
                 ) : (
-                    /* ÉTAT PAR DÉFAUT : HISTORIQUE ET CUISINES */
                     <>
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Récents</Text>
+                                <Text
+                                    style={[
+                                        styles.sectionTitle,
+                                        { color: textColor },
+                                    ]}
+                                >
+                                    Récents
+                                </Text>
                                 <TouchableOpacity>
                                     <Text style={styles.clearAllText}>
                                         Effacer
@@ -101,15 +138,27 @@ export default function SearchScreen() {
                                     (item, i) => (
                                         <TouchableOpacity
                                             key={i}
-                                            style={styles.chip}
+                                            style={[
+                                                styles.chip,
+                                                {
+                                                    backgroundColor:
+                                                        headerColor,
+                                                    borderColor: borderColor,
+                                                },
+                                            ]}
                                             onPress={() => setSearchText(item)}
                                         >
                                             <History
                                                 size={14}
-                                                color="#FF6B35"
+                                                color={primaryColor}
                                                 style={{ marginRight: 6 }}
                                             />
-                                            <Text style={styles.chipText}>
+                                            <Text
+                                                style={[
+                                                    styles.chipText,
+                                                    { color: textColor },
+                                                ]}
+                                            >
                                                 {item}
                                             </Text>
                                         </TouchableOpacity>
@@ -120,24 +169,48 @@ export default function SearchScreen() {
 
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>
+                                <Text
+                                    style={[
+                                        styles.sectionTitle,
+                                        { color: textColor },
+                                    ]}
+                                >
                                     Parcourir par cuisine
                                 </Text>
-                                <TrendingUp size={16} color="#BBB" />
+                                <TrendingUp size={16} color={textMuted} />
                             </View>
                             <View style={styles.grid}>
                                 {cuisines.map((item) => (
                                     <TouchableOpacity
                                         key={item.id}
-                                        style={styles.gridItem}
+                                        style={[
+                                            styles.gridItem,
+                                            {
+                                                backgroundColor: headerColor,
+                                                borderColor: borderColor,
+                                            },
+                                        ]}
                                         onPress={() => setSearchText(item.name)}
                                     >
-                                        <View style={styles.iconCircle}>
+                                        <View
+                                            style={[
+                                                styles.iconCircle,
+                                                {
+                                                    backgroundColor:
+                                                        backgroundColor,
+                                                },
+                                            ]}
+                                        >
                                             <Text style={styles.gridIcon}>
                                                 {item.icon}
                                             </Text>
                                         </View>
-                                        <Text style={styles.gridName}>
+                                        <Text
+                                            style={[
+                                                styles.gridName,
+                                                { color: textColor },
+                                            ]}
+                                        >
                                             {item.name}
                                         </Text>
                                     </TouchableOpacity>
@@ -152,36 +225,24 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FDFDFD' },
+    container: { flex: 1 },
     header: {
         paddingTop: 60,
         paddingHorizontal: 20,
         paddingBottom: 20,
-        backgroundColor: '#FFF',
+        // On enlève le backgroundColor fixe
     },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        color: '#1A1A1A',
-    },
+    title: { fontSize: 28, fontWeight: 'bold', marginBottom: 15 },
     searchContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     searchBar: {
         flex: 1,
         flexDirection: 'row',
-        backgroundColor: '#F2F2F2',
         padding: 12,
         borderRadius: 15,
         alignItems: 'center',
     },
-    input: { flex: 1, marginLeft: 10, fontSize: 16, color: '#333' },
-    filterBtn: {
-        backgroundColor: '#FF6B35',
-        padding: 12,
-        borderRadius: 15,
-        elevation: 2,
-    },
-
+    input: { flex: 1, marginLeft: 10, fontSize: 16 },
+    filterBtn: { padding: 12, borderRadius: 15, elevation: 2 },
     scrollContent: { paddingBottom: 100 },
     section: { marginTop: 25, paddingHorizontal: 20 },
     sectionHeader: {
@@ -190,26 +251,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 15,
     },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A' },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold' },
     clearAllText: { color: '#FF6B35', fontSize: 14, fontWeight: '500' },
-
     chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF',
-        borderWidth: 1,
-        borderColor: '#EEE',
         paddingHorizontal: 15,
         paddingVertical: 10,
         borderRadius: 25,
-        shadowColor: '#000',
-        shadowOpacity: 0.02,
-        shadowRadius: 5,
         elevation: 1,
     },
-    chipText: { color: '#555', fontWeight: '500' },
-
+    chipText: { fontWeight: '500' },
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -217,33 +270,24 @@ const styles = StyleSheet.create({
     },
     gridItem: {
         width: '48%',
-        backgroundColor: '#FFF',
         padding: 20,
         borderRadius: 25,
         alignItems: 'center',
         marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#F5F5F5',
         elevation: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
     },
     iconCircle: {
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: '#F8F9FA',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
     },
     gridIcon: { fontSize: 30 },
-    gridName: { fontWeight: '700', color: '#444' },
-
-    /* Résultats */
+    gridName: { fontWeight: '700' },
     resultsSection: { paddingHorizontal: 20, marginTop: 20 },
-    resultsCount: { fontSize: 14, color: '#888', marginBottom: 20 },
+    resultsCount: { fontSize: 14, marginBottom: 20 },
     emptyState: { alignItems: 'center', marginTop: 50 },
-    emptyText: { color: '#999', textAlign: 'center', fontSize: 16 },
+    emptyText: { textAlign: 'center', fontSize: 16 },
 });

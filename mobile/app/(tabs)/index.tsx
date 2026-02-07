@@ -13,13 +13,22 @@ import CardRestaurant from '@/components/ui/card/CardRestaurant';
 import { categories, offers, restaurants } from '@/data/dataMocket';
 import CardCategory from '@/components/ui/card/CardCategory';
 import { useRouter } from 'expo-router';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 export default function HomeScreen() {
     const router = useRouter();
 
+    // 1. Définition des couleurs dynamiques
+    const backgroundColor = useThemeColor({}, 'background');
+    const textColor = useThemeColor({}, 'text');
+    const textMuted = useThemeColor({}, 'textMuted');
+    const cardColor = useThemeColor({}, 'card');
+    const primaryColor = useThemeColor({}, 'primary');
+    const primaryLight = useThemeColor({}, 'primaryLight');
+
     return (
         <ScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor }]}
             showsVerticalScrollIndicator={false}
         >
             <View style={styles.header}>
@@ -28,19 +37,38 @@ export default function HomeScreen() {
                     activeOpacity={0.7}
                     onPress={() => console.log('Ouvrir sélection adresse')}
                 >
-                    <Text style={styles.deliveryTo}>Livrer au</Text>
+                    {/* Couleur muette dynamique */}
+                    <Text style={[styles.deliveryTo, { color: textMuted }]}>
+                        Livrer au
+                    </Text>
                     <View style={styles.locationRow}>
-                        <View style={styles.iconCircle}>
+                        <View
+                            style={[
+                                styles.iconCircle,
+                                { backgroundColor: primaryLight },
+                            ]}
+                        >
                             <MapPin
                                 size={16}
-                                color="#FF6B35"
-                                fill="#FF6B3520"
+                                color={primaryColor}
+                                fill={`${primaryColor}20`}
                             />
                         </View>
-                        <Text style={styles.address} numberOfLines={1}>
+                        {/* Texte principal dynamique */}
+                        <Text
+                            style={[styles.address, { color: textColor }]}
+                            numberOfLines={1}
+                        >
                             {"15 Rue de l'Innovation, Paris"}
                         </Text>
-                        <Text style={styles.dropdownArrow}>⌄</Text>
+                        <Text
+                            style={[
+                                styles.dropdownArrow,
+                                { color: primaryColor },
+                            ]}
+                        >
+                            ⌄
+                        </Text>
                     </View>
                 </TouchableOpacity>
 
@@ -49,21 +77,35 @@ export default function HomeScreen() {
                     activeOpacity={0.8}
                 >
                     <View style={styles.profileContainer}>
-                        <View style={styles.profilePic}>
+                        <View
+                            style={[
+                                styles.profilePic,
+                                { backgroundColor: primaryColor },
+                            ]}
+                        >
                             <Text style={styles.profileInitial}>M</Text>
                         </View>
-                        <View style={styles.onlineBadge} />
+                        {/* Le badge reste vert, mais la bordure s'adapte au fond */}
+                        <View
+                            style={[
+                                styles.onlineBadge,
+                                { borderColor: backgroundColor },
+                            ]}
+                        />
                     </View>
                 </TouchableOpacity>
             </View>
 
             <View style={styles.searchSection}>
-                <View style={styles.searchBar}>
-                    <Search size={20} color="#999" />
+                {/* Barre de recherche avec fond de carte dynamique */}
+                <View
+                    style={[styles.searchBar, { backgroundColor: cardColor }]}
+                >
+                    <Search size={20} color={textMuted} />
                     <TextInput
-                        placeholderTextColor="#999"
+                        placeholderTextColor={textMuted}
                         placeholder="Un restaurant, un plat..."
-                        style={styles.searchInput}
+                        style={[styles.searchInput, { color: textColor }]}
                     />
                 </View>
             </View>
@@ -80,7 +122,9 @@ export default function HomeScreen() {
                 ))}
             </ScrollView>
 
-            <Text style={styles.sectionTitle}>Catégories</Text>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>
+                Catégories
+            </Text>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -95,7 +139,9 @@ export default function HomeScreen() {
                 ))}
             </ScrollView>
 
-            <Text style={styles.sectionTitle}>Populaires à proximité</Text>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>
+                Populaires à proximité
+            </Text>
 
             {restaurants.map((resto) => (
                 <CardRestaurant key={resto.id} resto={resto} />
@@ -105,32 +151,25 @@ export default function HomeScreen() {
     );
 }
 
+// Les styles de base restent propres, on injecte l'aspect dynamique via les "style arrays" []
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 60, 
+        marginTop: 60,
         marginBottom: 10,
     },
-    locationContainer: {
-        flex: 1,
-        marginRight: 20,
-    },
+    locationContainer: { flex: 1, marginRight: 20 },
     deliveryTo: {
-        color: '#BBB',
         fontSize: 12,
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
         marginBottom: 4,
     },
-    locationRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
+    locationRow: { flexDirection: 'row', alignItems: 'center' },
     iconCircle: {
-        backgroundColor: '#FF6B3515',
         padding: 6,
         borderRadius: 10,
         marginRight: 8,
@@ -138,37 +177,28 @@ const styles = StyleSheet.create({
     address: {
         fontWeight: '700',
         fontSize: 16,
-        color: '#1A1A1A',
         maxWidth: '80%',
     },
     dropdownArrow: {
         marginLeft: 5,
         fontSize: 18,
-        color: '#FF6B35',
         fontWeight: 'bold',
-        marginTop: -5, // Ajustement visuel
+        marginTop: -5,
     },
-    profileContainer: {
-        position: 'relative',
-    },
+    profileContainer: { position: 'relative' },
     profilePic: {
         width: 48,
         height: 48,
         borderRadius: 16,
-        backgroundColor: '#FF6B35',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#FF6B35',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
         elevation: 5,
+        shadowColor: '#000', // Noir pour l'ombre même en light
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
     },
-    profileInitial: {
-        color: '#FFF',
-        fontWeight: 'bold',
-        fontSize: 18,
-    },
+    profileInitial: { color: '#FFF', fontWeight: 'bold', fontSize: 18 },
     onlineBadge: {
         position: 'absolute',
         right: -2,
@@ -178,32 +208,16 @@ const styles = StyleSheet.create({
         borderRadius: 7,
         backgroundColor: '#4CAF50',
         borderWidth: 2,
-        borderColor: '#FDFDFD',
     },
     promoContainer: { marginTop: 25, flexDirection: 'row' },
-    container: { flex: 1, backgroundColor: '#FDFDFD', paddingHorizontal: 20 },
+    container: { flex: 1, paddingHorizontal: 20 },
     searchSection: { marginTop: 25 },
     searchBar: {
         flexDirection: 'row',
-        backgroundColor: '#F1F1F1',
         padding: 12,
         borderRadius: 15,
         alignItems: 'center',
     },
     searchInput: { marginLeft: 10, flex: 1, fontSize: 16 },
     sectionTitle: { fontSize: 20, fontWeight: 'bold', marginVertical: 20 },
-    catList: { flexDirection: 'row' },
-    catItem: { alignItems: 'center', marginRight: 25 },
-    catIcon: {
-        fontSize: 30,
-        backgroundColor: '#FFF',
-        padding: 10,
-        borderRadius: 15,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    catName: { marginTop: 8, fontWeight: '500', color: '#444' },
 });

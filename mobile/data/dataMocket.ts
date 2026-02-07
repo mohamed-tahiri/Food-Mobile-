@@ -59,6 +59,7 @@ export const restaurants = [
         type: 'Français • Cuisine Fine',
         promo: '-20% sur tout',
         distance: '0.8 km',
+        isFavorite: false,
     },
     {
         id: '2',
@@ -69,6 +70,7 @@ export const restaurants = [
             'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=800',
         type: 'Japonais • Sushi & Ramen',
         distance: '1.5 km',
+        isFavorite: false,
     },
     {
         id: '3',
@@ -80,6 +82,7 @@ export const restaurants = [
         type: 'Italien • Pizza au feu de bois',
         promo: '1 achetée = 1 offerte',
         distance: '2.1 km',
+        isFavorite: false,
     },
     {
         id: '4',
@@ -90,6 +93,7 @@ export const restaurants = [
             'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800',
         type: 'Américain • Burger Gourmet',
         distance: '0.5 km',
+        isFavorite: false,
     },
     {
         id: '5',
@@ -101,6 +105,7 @@ export const restaurants = [
         type: 'Mexicain • Tacos & Burritos',
         promo: 'Menu à 9.99€',
         distance: '3.0 km',
+        isFavorite: false,
     },
     {
         id: '6',
@@ -111,6 +116,7 @@ export const restaurants = [
             'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800',
         type: 'Salade • Healthy & Vegan',
         distance: '0.3 km',
+        isFavorite: false,
     },
 ];
 
@@ -124,6 +130,7 @@ export const favorites = [
         imageUrl:
             'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800',
         distance: '1.2 km',
+        isFavorite: true,
     },
     {
         id: '2',
@@ -134,6 +141,7 @@ export const favorites = [
         imageUrl:
             'https://images.unsplash.com/photo-1583623025817-d180a2221d0a?w=800', // Image de sushi pro
         distance: '2.5 km',
+        isFavorite: true,
     },
 ];
 

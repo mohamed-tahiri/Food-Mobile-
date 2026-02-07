@@ -20,8 +20,12 @@ import {
     Share2,
     ShieldCheck,
     ShoppingBag,
+    Moon,
+    Sun,
     type LucideIcon,
 } from 'lucide-react-native';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/context/ThemeContext'; // Import crucial
 
 interface ProfileOptionProps {
     Icon: LucideIcon;
@@ -39,40 +43,67 @@ const ProfileOption = ({
     color = '#333',
     isLast,
     onPress,
-}: ProfileOptionProps) => (
-    <TouchableOpacity
-        style={[styles.option, isLast && { borderBottomWidth: 0 }]}
-        onPress={onPress}
-        activeOpacity={0.7}
-    >
-        <View style={styles.optionLeft}>
-            <View
-                style={[
-                    styles.iconContainer,
-                    { backgroundColor: color + '15' },
-                ]}
-            >
-                <Icon size={20} color={color} />
-            </View>
-            <View style={styles.textContainer}>
-                <Text
+}: ProfileOptionProps) => {
+    const textColor = useThemeColor({}, 'text');
+    const textMuted = useThemeColor({}, 'textMuted');
+    const borderColor = useThemeColor({}, 'border');
+
+    return (
+        <TouchableOpacity
+            style={[
+                styles.option,
+                !isLast && {
+                    borderBottomWidth: 1,
+                    borderBottomColor: borderColor,
+                },
+            ]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <View style={styles.optionLeft}>
+                <View
                     style={[
-                        styles.optionTitle,
-                        { color: color === '#FF3B30' ? color : '#1A1A1A' },
+                        styles.iconContainer,
+                        { backgroundColor: color + '20' },
                     ]}
                 >
-                    {title}
-                </Text>
-                {subtitle && (
-                    <Text style={styles.optionSubtitle}>{subtitle}</Text>
-                )}
+                    <Icon size={20} color={color} />
+                </View>
+                <View style={styles.textContainer}>
+                    <Text
+                        style={[
+                            styles.optionTitle,
+                            { color: color === '#FF3B30' ? color : textColor },
+                        ]}
+                    >
+                        {title}
+                    </Text>
+                    {subtitle && (
+                        <Text
+                            style={[
+                                styles.optionSubtitle,
+                                { color: textMuted },
+                            ]}
+                        >
+                            {subtitle}
+                        </Text>
+                    )}
+                </View>
             </View>
-        </View>
-        <ChevronRight size={18} color="#CCC" />
-    </TouchableOpacity>
-);
+            <ChevronRight size={18} color={textMuted} />
+        </TouchableOpacity>
+    );
+};
 
 export default function ProfileScreen() {
+    const { isDark, toggleTheme } = useAppTheme();
+
+    const backgroundColor = useThemeColor({}, 'background');
+    const headerColor = useThemeColor({}, 'tabBar');
+    const textColor = useThemeColor({}, 'text');
+    const textMuted = useThemeColor({}, 'textMuted');
+    const cardColor = useThemeColor({}, 'card');
+
     const handleLogout = () => {
         Alert.alert(
             'Déconnexion',
@@ -90,26 +121,55 @@ export default function ProfileScreen() {
 
     return (
         <ScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor }]}
             showsVerticalScrollIndicator={false}
         >
-            <View style={styles.header}>
+            {/* HEADER */}
+            <View style={[styles.header, { backgroundColor: headerColor }]}>
                 <View style={styles.avatarContainer}>
                     <View style={styles.avatar}>
                         <Text style={styles.avatarText}>MT</Text>
                     </View>
-                    <TouchableOpacity style={styles.editBadge}>
+                    <TouchableOpacity
+                        style={[styles.editBadge, { borderColor: headerColor }]}
+                    >
                         <Settings size={14} color="#FFF" />
                     </TouchableOpacity>
                 </View>
-                <Text style={styles.userName}>Med Tahiri</Text>
-                <Text style={styles.userEmail}>
+                <Text style={[styles.userName, { color: textColor }]}>
+                    Med Tahiri
+                </Text>
+                <Text style={[styles.userEmail, { color: textMuted }]}>
                     med.tahiri@estiam.education
                 </Text>
             </View>
+
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Activité</Text>
-                <View style={styles.card}>
+                <Text style={[styles.sectionTitle, { color: textMuted }]}>
+                    Préférences
+                </Text>
+                <View style={[styles.card, { backgroundColor: cardColor }]}>
+                    <ProfileOption
+                        Icon={isDark ? Sun : Moon}
+                        title={isDark ? 'Mode Clair' : 'Mode Sombre'}
+                        subtitle={
+                            isDark
+                                ? 'Passer au thème lumineux'
+                                : 'Passer au thème nuit'
+                        }
+                        color={isDark ? '#FFB300' : '#4A90E2'}
+                        isLast={true}
+                        onPress={toggleTheme}
+                    />
+                </View>
+            </View>
+
+            {/* ACTIVITÉ */}
+            <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: textMuted }]}>
+                    Activité
+                </Text>
+                <View style={[styles.card, { backgroundColor: cardColor }]}>
                     <ProfileOption
                         Icon={ShoppingBag}
                         title="Mes commandes"
@@ -125,19 +185,21 @@ export default function ProfileScreen() {
                     />
                 </View>
             </View>
+
+            {/* MON COMPTE */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Mon Compte</Text>
-                <View style={styles.card}>
+                <Text style={[styles.sectionTitle, { color: textMuted }]}>
+                    Mon Compte
+                </Text>
+                <View style={[styles.card, { backgroundColor: cardColor }]}>
                     <ProfileOption
                         Icon={User}
                         title="Informations personnelles"
-                        subtitle="Gérer votre profil"
                         color="#FF6B35"
                     />
                     <ProfileOption
                         Icon={MapPin}
                         title="Adresses enregistrées"
-                        subtitle="Domicile, Travail..."
                         color="#FF6B35"
                     />
                     <ProfileOption
@@ -149,9 +211,13 @@ export default function ProfileScreen() {
                     />
                 </View>
             </View>
+
+            {/* PARAMÈTRES */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Paramètres & Sécurité</Text>
-                <View style={styles.card}>
+                <Text style={[styles.sectionTitle, { color: textMuted }]}>
+                    Paramètres & Sécurité
+                </Text>
+                <View style={[styles.card, { backgroundColor: cardColor }]}>
                     <ProfileOption
                         Icon={Bell}
                         title="Notifications"
@@ -170,8 +236,10 @@ export default function ProfileScreen() {
                     />
                 </View>
             </View>
+
+            {/* DÉCONNEXION */}
             <View style={[styles.section, { marginBottom: 30 }]}>
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: cardColor }]}>
                     <ProfileOption
                         Icon={LogOut}
                         title="Déconnexion"
@@ -182,22 +250,20 @@ export default function ProfileScreen() {
                 </View>
             </View>
 
-            <Text style={styles.versionText}>Foodie App Version 1.0.0</Text>
+            <Text style={[styles.versionText, { color: textMuted }]}>
+                Foodie App Version 1.0.0
+            </Text>
             <View style={{ height: 100 }} />
         </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F8F9FA',
-    },
+    container: { flex: 1 },
     header: {
         alignItems: 'center',
         paddingTop: Platform.OS === 'ios' ? 80 : 60,
         paddingBottom: 30,
-        backgroundColor: '#FFF',
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
         shadowColor: '#000',
@@ -205,10 +271,7 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 2,
     },
-    avatarContainer: {
-        position: 'relative',
-        marginBottom: 15,
-    },
+    avatarContainer: { position: 'relative', marginBottom: 15 },
     avatar: {
         width: 90,
         height: 90,
@@ -216,9 +279,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#FF6B35',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#FF6B35',
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
         elevation: 5,
     },
     avatarText: { color: '#FFF', fontSize: 32, fontWeight: 'bold' },
@@ -230,57 +290,36 @@ const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 20,
         borderWidth: 3,
-        borderColor: '#FFF',
     },
-    userName: { fontSize: 22, fontWeight: 'bold', color: '#1A1A1A' },
-    userEmail: { fontSize: 14, color: '#777', marginTop: 4 },
-    section: {
-        paddingHorizontal: 20,
-        marginTop: 25,
-    },
+    userName: { fontSize: 22, fontWeight: 'bold' },
+    userEmail: { fontSize: 14, marginTop: 4 },
+    section: { paddingHorizontal: 20, marginTop: 25 },
     sectionTitle: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#BBB',
         marginBottom: 12,
         marginLeft: 5,
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
     card: {
-        backgroundColor: '#FFF',
         borderRadius: 20,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.03,
-        shadowRadius: 15,
         elevation: 2,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 15,
     },
     option: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F1F1F1',
     },
-    optionLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    iconContainer: {
-        padding: 10,
-        borderRadius: 14,
-        marginRight: 16,
-    },
+    optionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    iconContainer: { padding: 10, borderRadius: 14, marginRight: 16 },
     textContainer: { flex: 1 },
     optionTitle: { fontSize: 16, fontWeight: '600' },
-    optionSubtitle: { fontSize: 12, color: '#999', marginTop: 2 },
-    versionText: {
-        textAlign: 'center',
-        color: '#BBB',
-        fontSize: 12,
-        marginTop: 20,
-    },
+    optionSubtitle: { fontSize: 12, marginTop: 2 },
+    versionText: { textAlign: 'center', fontSize: 12, marginTop: 20 },
 });

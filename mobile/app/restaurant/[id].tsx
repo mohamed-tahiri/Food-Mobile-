@@ -12,6 +12,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Star, Clock } from 'lucide-react-native';
 import { menuItems } from '@/data/dataMocket';
 import CardMenuItem from '@/components/ui/card/CardMenuItem';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 const { width } = Dimensions.get('window');
 
@@ -19,8 +20,15 @@ export default function RestaurantDetail() {
     const { name, imageUrl } = useLocalSearchParams();
     const router = useRouter();
 
+    // Couleurs thématiques
+    const backgroundColor = useThemeColor({}, 'background');
+    const textColor = useThemeColor({}, 'text');
+    const textMuted = useThemeColor({}, 'textMuted');
+    const primaryColor = useThemeColor({}, 'primary');
+    const borderColor = useThemeColor({}, 'border');
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
             {/* HEADER IMAGE */}
@@ -35,8 +43,12 @@ export default function RestaurantDetail() {
                     resizeMode="cover"
                 />
                 <View style={styles.overlay} />
+                {/* Bouton retour s'adapte au fond de l'image (souvent sombre) */}
                 <TouchableOpacity
-                    style={styles.backBtn}
+                    style={[
+                        styles.backBtn,
+                        { backgroundColor: 'rgba(255,255,255,0.9)' },
+                    ]}
                     onPress={() => router.back()}
                 >
                     <ChevronLeft color="#000" size={24} />
@@ -44,40 +56,64 @@ export default function RestaurantDetail() {
             </View>
 
             <ScrollView
-                style={styles.content}
+                style={[styles.content, { backgroundColor }]}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 120 }}
+                contentContainerStyle={{ paddingBottom: 150 }}
             >
                 <View style={styles.infoSection}>
-                    <Text style={styles.title}>
+                    <Text style={[styles.title, { color: textColor }]}>
                         {name || 'Restaurant Detail'}
                     </Text>
                     <View style={styles.metaRow}>
-                        <View style={styles.ratingBox}>
+                        <View
+                            style={[
+                                styles.ratingBox,
+                                { backgroundColor: '#FFB30020' },
+                            ]}
+                        >
                             <Star size={16} color="#FFB300" fill="#FFB300" />
                             <Text style={styles.ratingText}> 4.8</Text>
-                            <Text style={styles.reviewText}> (200+ avis)</Text>
+                            <Text
+                                style={[
+                                    styles.reviewText,
+                                    { color: textMuted },
+                                ]}
+                            >
+                                {' '}
+                                (200+ avis)
+                            </Text>
                         </View>
                         <View style={styles.timeBox}>
-                            <Clock size={16} color="#666" />
-                            <Text style={styles.timeText}> 15-25 min</Text>
+                            <Clock size={16} color={textMuted} />
+                            <Text
+                                style={[styles.timeText, { color: textMuted }]}
+                            >
+                                {' '}
+                                15-25 min
+                            </Text>
                         </View>
                     </View>
                 </View>
 
-                <View style={styles.divider} />
+                <View
+                    style={[styles.divider, { backgroundColor: borderColor }]}
+                />
 
-                <Text style={styles.sectionTitle}>Menu populaire</Text>
+                <Text style={[styles.sectionTitle, { color: textColor }]}>
+                    Menu populaire
+                </Text>
 
-                {/* Utilisation du composant réutilisable */}
                 {menuItems.map((item) => (
                     <CardMenuItem key={item.id} item={item} />
                 ))}
             </ScrollView>
 
-            {/* Panier Flottant */}
+            {/* Panier Flottant - Le orange reste la couleur d'action principale */}
             <View style={styles.cartFooter}>
-                <TouchableOpacity style={styles.cartBtn} activeOpacity={0.9}>
+                <TouchableOpacity
+                    style={[styles.cartBtn, { backgroundColor: primaryColor }]}
+                    activeOpacity={0.9}
+                >
                     <View style={styles.cartBadge}>
                         <Text style={styles.cartBadgeText}>2</Text>
                     </View>
@@ -89,9 +125,8 @@ export default function RestaurantDetail() {
     );
 }
 
-// Les styles restent identiques à ton code original pour la page
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFF' },
+    container: { flex: 1 },
     imageHeader: { height: 260, width: width, position: 'relative' },
     mainImage: { width: '100%', height: '100%' },
     overlay: {
@@ -102,7 +137,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 50,
         left: 20,
-        backgroundColor: '#FFF',
         padding: 10,
         borderRadius: 20,
         elevation: 5,
@@ -112,13 +146,12 @@ const styles = StyleSheet.create({
     },
     content: {
         marginTop: -30,
-        backgroundColor: '#FFF',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         paddingHorizontal: 20,
     },
     infoSection: { paddingTop: 25 },
-    title: { fontSize: 28, fontWeight: '800', color: '#1A1A1A' },
+    title: { fontSize: 28, fontWeight: '800' },
     metaRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -128,33 +161,30 @@ const styles = StyleSheet.create({
     ratingBox: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF9E6',
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderRadius: 10,
     },
     ratingText: { fontWeight: 'bold', color: '#FFB300' },
-    reviewText: { color: '#888', fontSize: 12 },
+    reviewText: { fontSize: 12 },
     timeBox: { flexDirection: 'row', alignItems: 'center' },
-    timeText: { color: '#666', fontWeight: '500' },
-    divider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 25 },
+    timeText: { fontWeight: '500' },
+    divider: { height: 1, marginVertical: 25 },
     sectionTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#1A1A1A',
         marginBottom: 20,
     },
     cartFooter: { position: 'absolute', bottom: 30, left: 20, right: 20 },
     cartBtn: {
-        backgroundColor: '#FF6B35',
         flexDirection: 'row',
         alignItems: 'center',
         padding: 18,
         borderRadius: 20,
         justifyContent: 'space-between',
         elevation: 10,
-        shadowColor: '#FF6B35',
-        shadowOpacity: 0.4,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
         shadowRadius: 10,
     },
     cartBadge: {
