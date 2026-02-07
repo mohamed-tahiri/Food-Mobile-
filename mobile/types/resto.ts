@@ -7,4 +7,5 @@ export interface Resto {
     type?: string;
     promo?: string;
     distance?: string;
+    isFavorite: boolean;
 }

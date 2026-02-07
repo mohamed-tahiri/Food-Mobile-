@@ -1,8 +1,9 @@
 import React from 'react';
 import { ShoppingBag } from 'lucide-react-native';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native'; // Correction ici
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Order } from '@/types/order';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 interface CardCommandProps {
     item: Order;
@@ -11,13 +12,20 @@ interface CardCommandProps {
 export default function CardCommand({ item }: CardCommandProps) {
     const router = useRouter();
 
-    // Couleur dynamique selon le statut
-    const statusColor = item.status === 'Livré' ? '#4CAF50' : '#FF6B35';
+    // 1. Récupération des couleurs du thème
+    const cardBg = useThemeColor({}, 'card');
+    const textColor = useThemeColor({}, 'text');
+    const textMuted = useThemeColor({}, 'textMuted');
+    const primaryColor = useThemeColor({}, 'primary');
+    const primaryLight = useThemeColor({}, 'primaryLight');
+
+    // Couleur dynamique selon le statut (Le vert reste vert, l'orange suit le thème)
+    const statusColor = item.status === 'Livré' ? '#4CAF50' : primaryColor;
 
     return (
         <TouchableOpacity
             activeOpacity={0.7}
-            style={styles.orderCard}
+            style={[styles.orderCard, { backgroundColor: cardBg }]}
             onPress={() =>
                 router.push({
                     pathname: '/order/[id]',
@@ -31,19 +39,31 @@ export default function CardCommand({ item }: CardCommandProps) {
                 })
             }
         >
-            <View style={styles.iconContainer}>
-                <ShoppingBag color="#FF6B35" size={22} />
+            <View
+                style={[
+                    styles.iconContainer,
+                    { backgroundColor: primaryLight },
+                ]}
+            >
+                <ShoppingBag color={primaryColor} size={22} />
             </View>
 
             <View style={styles.orderInfo}>
-                <Text style={styles.storeName} numberOfLines={1}>
+                <Text
+                    style={[styles.storeName, { color: textColor }]}
+                    numberOfLines={1}
+                >
                     {item.store}
                 </Text>
-                <Text style={styles.orderDate}>{item.date}</Text>
+                <Text style={[styles.orderDate, { color: textMuted }]}>
+                    {item.date}
+                </Text>
             </View>
 
             <View style={styles.orderPriceSection}>
-                <Text style={styles.price}>{item.price}</Text>
+                <Text style={[styles.price, { color: textColor }]}>
+                    {item.price}
+                </Text>
                 <View
                     style={[
                         styles.statusBadge,
@@ -62,12 +82,10 @@ export default function CardCommand({ item }: CardCommandProps) {
 const styles = StyleSheet.create({
     orderCard: {
         flexDirection: 'row',
-        backgroundColor: '#FFF',
         padding: 15,
         borderRadius: 18,
         marginBottom: 15,
         alignItems: 'center',
-        // Ombre plus douce
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -75,7 +93,6 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     iconContainer: {
-        backgroundColor: '#FFF0EB',
         padding: 12,
         borderRadius: 14,
     },
@@ -86,10 +103,8 @@ const styles = StyleSheet.create({
     storeName: {
         fontWeight: 'bold',
         fontSize: 16,
-        color: '#1A1A1A',
     },
     orderDate: {
-        color: '#999',
         fontSize: 13,
         marginTop: 2,
     },
@@ -98,7 +113,6 @@ const styles = StyleSheet.create({
     },
     price: {
         fontWeight: 'bold',
-        color: '#1A1A1A',
         fontSize: 15,
         marginBottom: 5,
     },

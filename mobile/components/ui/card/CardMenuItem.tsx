@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus } from 'lucide-react-native';
 import { TouchableOpacity, StyleSheet, Text, View, Image } from 'react-native';
 import { MenuItem } from '@/types/menuItem';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 interface CardMenuItemProps {
     item: MenuItem;
@@ -9,6 +10,12 @@ interface CardMenuItemProps {
 }
 
 export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
+    // 1. Récupération des couleurs dynamiques
+    const textColor = useThemeColor({}, 'text');
+    const textMuted = useThemeColor({}, 'textMuted');
+    const backgroundColor = useThemeColor({}, 'background'); // Fond derrière la carte
+    const primaryColor = useThemeColor({}, 'primary');
+
     return (
         <TouchableOpacity
             activeOpacity={0.7}
@@ -16,16 +23,32 @@ export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
             onPress={onPress}
         >
             <View style={styles.foodInfo}>
-                <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodDesc} numberOfLines={2}>
+                <Text style={[styles.foodName, { color: textColor }]}>
+                    {item.name}
+                </Text>
+                <Text
+                    style={[styles.foodDesc, { color: textMuted }]}
+                    numberOfLines={2}
+                >
                     {item.desc}
                 </Text>
-                <Text style={styles.foodPrice}>{item.price} €</Text>
+                <Text style={[styles.foodPrice, { color: primaryColor }]}>
+                    {item.price} €
+                </Text>
             </View>
 
             <View style={styles.foodImageWrapper}>
                 <Image source={{ uri: item.img }} style={styles.foodImage} />
-                <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
+                <TouchableOpacity
+                    style={[
+                        styles.addBtn,
+                        {
+                            backgroundColor: primaryColor,
+                            borderColor: backgroundColor, // La bordure s'adapte au fond pour l'effet de découpe
+                        },
+                    ]}
+                    activeOpacity={0.8}
+                >
                     <Plus size={20} color="#FFF" />
                 </TouchableOpacity>
             </View>
@@ -41,10 +64,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     foodInfo: { flex: 1 },
-    foodName: { fontSize: 17, fontWeight: '700', color: '#1A1A1A' },
-    foodDesc: { color: '#888', fontSize: 13, marginTop: 5, lineHeight: 18 },
+    foodName: { fontSize: 17, fontWeight: '700' },
+    foodDesc: { fontSize: 13, marginTop: 5, lineHeight: 18 },
     foodPrice: {
-        color: '#FF6B35',
         fontWeight: 'bold',
         fontSize: 16,
         marginTop: 8,
@@ -60,13 +82,11 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: -10,
         right: -10,
-        backgroundColor: '#FF6B35',
         width: 35,
         height: 35,
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 3,
-        borderColor: '#FFF',
     },
 });

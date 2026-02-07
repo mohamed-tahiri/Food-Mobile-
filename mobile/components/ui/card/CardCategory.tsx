@@ -1,6 +1,7 @@
 import { Category } from '@/types/category';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 interface CardCategoryProps {
     cat: Category;
@@ -11,12 +12,24 @@ export default function CardCategory({
     cat,
     isSelected = false,
 }: CardCategoryProps) {
+    // 1. Récupération des couleurs du thème
+    const backgroundColor = useThemeColor({}, 'background');
+    const cardColor = useThemeColor({}, 'card');
+    const textColor = useThemeColor({}, 'text');
+    const primaryColor = useThemeColor({}, 'primary');
+    const borderColor = useThemeColor({}, 'border');
+
     return (
         <TouchableOpacity
             activeOpacity={0.8}
             style={[
                 styles.catCard,
-                isSelected ? styles.catCardActive : styles.catCardInactive,
+                isSelected
+                    ? {
+                          backgroundColor: primaryColor,
+                          borderColor: primaryColor,
+                      }
+                    : { backgroundColor: cardColor, borderColor: borderColor },
             ]}
         >
             <View
@@ -24,7 +37,7 @@ export default function CardCategory({
                     styles.iconWrapper,
                     isSelected
                         ? styles.iconWrapperActive
-                        : styles.iconWrapperInactive,
+                        : { backgroundColor: backgroundColor }, // Fond de l'icône s'adapte au thème
                 ]}
             >
                 <Text style={styles.catIcon}>{cat.icon}</Text>
@@ -32,7 +45,7 @@ export default function CardCategory({
             <Text
                 style={[
                     styles.catName,
-                    isSelected ? styles.catNameActive : styles.catNameInactive,
+                    isSelected ? styles.catNameActive : { color: textColor }, // Texte s'adapte au thème
                 ]}
             >
                 {cat.name}
@@ -43,27 +56,19 @@ export default function CardCategory({
 
 const styles = StyleSheet.create({
     catCard: {
-        flexDirection: 'row', // Alignement horizontal (Icon + Texte)
+        flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderRadius: 25, // Forme pilule
+        borderRadius: 25,
         marginRight: 12,
         borderWidth: 1,
-        // Ombre légère
+        // Ombre adaptée
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
-    },
-    catCardActive: {
-        backgroundColor: '#FF6B35',
-        borderColor: '#FF6B35',
-    },
-    catCardInactive: {
-        backgroundColor: '#FFF',
-        borderColor: '#F0F0F0',
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     iconWrapper: {
         width: 32,
@@ -76,9 +81,6 @@ const styles = StyleSheet.create({
     iconWrapperActive: {
         backgroundColor: 'rgba(255,255,255,0.2)',
     },
-    iconWrapperInactive: {
-        backgroundColor: '#F8F9FA',
-    },
     catIcon: {
         fontSize: 18,
     },
@@ -88,8 +90,5 @@ const styles = StyleSheet.create({
     },
     catNameActive: {
         color: '#FFF',
-    },
-    catNameInactive: {
-        color: '#444',
     },
 });
