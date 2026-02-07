@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -14,17 +14,33 @@ import { categories, offers, restaurants } from '@/data/dataMocket';
 import CardCategory from '@/components/ui/card/CardCategory';
 import { useRouter } from 'expo-router';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { getCurrentAddress } from '@/services/localisation.service';
 
 export default function HomeScreen() {
+    const [displayAddress, setDisplayAddress] = useState("Chargement...");
+
     const router = useRouter();
 
-    // 1. Définition des couleurs dynamiques
     const backgroundColor = useThemeColor({}, 'background');
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
     const cardColor = useThemeColor({}, 'card');
     const primaryColor = useThemeColor({}, 'primary');
     const primaryLight = useThemeColor({}, 'primaryLight');
+
+    useEffect(() => {
+        const fetchLocation = async () => {
+            try {
+                const address = await getCurrentAddress();
+                setDisplayAddress(address);
+            } catch (err) {
+                console.error("Erreur localisation, adresse par défaut utilisée:", err);
+                setDisplayAddress("13 Allée de la Noiseraie, Noisy-le-Grand");
+            }
+        };
+
+        fetchLocation();
+    }, []);
 
     return (
         <ScrollView
@@ -54,12 +70,11 @@ export default function HomeScreen() {
                                 fill={`${primaryColor}20`}
                             />
                         </View>
-                        {/* Texte principal dynamique */}
                         <Text
                             style={[styles.address, { color: textColor }]}
                             numberOfLines={1}
                         >
-                            {"15 Rue de l'Innovation, Paris"}
+                            {displayAddress}
                         </Text>
                         <Text
                             style={[
@@ -151,7 +166,6 @@ export default function HomeScreen() {
     );
 }
 
-// Les styles de base restent propres, on injecte l'aspect dynamique via les "style arrays" []
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
