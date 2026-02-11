@@ -1,3 +1,5 @@
+import { MenuItem } from "./menuItem";
+
 export interface Resto {
     id: string;
     name: string;
@@ -8,4 +10,5 @@ export interface Resto {
     promo?: string;
     distance?: string;
     isFavorite: boolean;
+    menus: MenuItem[]
 }
