@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -7,7 +7,7 @@ import {
     TextInput,
     TouchableOpacity,
 } from 'react-native';
-import { Search, MapPin } from 'lucide-react-native';
+import { Search, MapPin, SlidersHorizontal } from 'lucide-react-native';
 import CardPromo from '@/components/ui/card/CardPromo';
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
 import { categories, offers, restaurants } from '@/data/dataMocket';
@@ -15,11 +15,15 @@ import CardCategory from '@/components/ui/card/CardCategory';
 import { useRouter } from 'expo-router';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getCurrentAddress } from '@/services/localisation.service';
+import FilterBottomSheet from '@/components/ui/FilterBottomSheet';
+import BottomSheet from '@gorhom/bottom-sheet';
 
 export default function HomeScreen() {
+    const bottomSheetRef = useRef<BottomSheet>(null);
     const [displayAddress, setDisplayAddress] = useState("Chargement...");
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeSort, setActiveSort] = useState<string | null>(null);
 
     const router = useRouter();
 
@@ -30,154 +34,161 @@ export default function HomeScreen() {
     const primaryColor = useThemeColor({}, 'primary');
     const primaryLight = useThemeColor({}, 'primaryLight');
 
+    const handleOpenFilters = useCallback(() => {
+        bottomSheetRef.current?.expand();
+    }, []);
+
     useEffect(() => {
         const fetchLocation = async () => {
             try {
                 const address = await getCurrentAddress();
                 setDisplayAddress(address);
             } catch (err) {
-                console.error("Erreur localisation :", err);
+                console.log('Erreur localisation :', err);
                 setDisplayAddress("13 Allée de la Noiseraie, Noisy-le-Grand");
             }
         };
         fetchLocation();
     }, []);
 
+    // LOGIQUE DE FILTRAGE + TRI
     const filteredRestaurants = restaurants.filter((resto) => {
         const normalizedType = resto.type?.toLowerCase().trim() || "";
         const normalizedName = resto.name.toLowerCase().trim();
         const search = searchQuery.toLowerCase().trim();
-        
         const isAllSelected = !selectedCategory || selectedCategory === 'Tout';
         
-        const matchCategory = isAllSelected 
-            ? true 
-            : normalizedType.includes(selectedCategory!.toLowerCase().trim());
-        
+        const matchCategory = isAllSelected ? true : normalizedType.includes(selectedCategory!.toLowerCase().trim());
         const matchSearch = normalizedName.includes(search) || normalizedType.includes(search);
 
         return matchCategory && matchSearch;
+    }).sort((a, b) => {
+        if (activeSort === 'rating') return parseFloat(b.rating) - parseFloat(a.rating);
+        if (activeSort === 'time') return parseInt(a.time) - parseInt(b.time);
+        return 0;
     });
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor }]}
-            showsVerticalScrollIndicator={false}
-        >
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.locationContainer} activeOpacity={0.7}>
-                    <Text style={[styles.deliveryTo, { color: textMuted }]}>Livrer au</Text>
-                    <View style={styles.locationRow}>
-                        <View style={[styles.iconCircle, { backgroundColor: primaryLight }]}>
-                            <MapPin size={16} color={primaryColor} fill={`${primaryColor}20`} />
-                        </View>
-                        <Text style={[styles.address, { color: textColor }]} numberOfLines={1}>{displayAddress}</Text>
-                        <Text style={[styles.dropdownArrow, { color: primaryColor }]}>⌄</Text>
-                    </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.8}>
-                    <View style={styles.profileContainer}>
-                        <View style={[styles.profilePic, { backgroundColor: primaryColor }]}>
-                            <Text style={styles.profileInitial}>M</Text>
-                        </View>
-                        <View style={[styles.onlineBadge, { borderColor: backgroundColor }]} />
-                    </View>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.searchSection}>
-                <View style={[styles.searchBar, { backgroundColor: cardColor }]}>
-                    <Search size={20} color={textMuted} />
-                    <TextInput
-                        placeholderTextColor={textMuted}
-                        placeholder="Un restaurant, un plat..."
-                        style={[styles.searchInput, { color: textColor }]}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
-            </View>
-
+        <View style={{ flex: 1, backgroundColor }}>
             <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.promoContainer}
-                snapToInterval={310}
-                decelerationRate="fast"
+                style={[styles.container, { backgroundColor }]}
+                showsVerticalScrollIndicator={false}
             >
-                {offers.map((offer) => (
-                    <CardPromo key={offer.id} offer={offer} />
-                ))}
-            </ScrollView>
+                {/* Header Localisation & Profil */}
+                <View style={styles.header}>
+                    <TouchableOpacity style={styles.locationContainer} activeOpacity={0.7}>
+                        <Text style={[styles.deliveryTo, { color: textMuted }]}>Livrer au</Text>
+                        <View style={styles.locationRow}>
+                            <View style={[styles.iconCircle, { backgroundColor: primaryLight }]}>
+                                <MapPin size={16} color={primaryColor} fill={`${primaryColor}20`} />
+                            </View>
+                            <Text style={[styles.address, { color: textColor }]} numberOfLines={1}>{displayAddress}</Text>
+                            <Text style={[styles.dropdownArrow, { color: primaryColor }]}>⌄</Text>
+                        </View>
+                    </TouchableOpacity>
 
-            {!searchQuery && !selectedCategory && (
+                    <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.8}>
+                        <View style={styles.profileContainer}>
+                            <View style={[styles.profilePic, { backgroundColor: primaryColor }]}>
+                                <Text style={styles.profileInitial}>M</Text>
+                            </View>
+                            <View style={[styles.onlineBadge, { borderColor: backgroundColor }]} />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Barre de Recherche + Bouton Filtre */}
+                <View style={styles.searchSection}>
+                    <View style={[styles.searchBar, { backgroundColor: cardColor }]}>
+                        <Search size={20} color={textMuted} />
+                        <TextInput
+                            placeholderTextColor={textMuted}
+                            placeholder="Un restaurant, un plat..."
+                            style={[styles.searchInput, { color: textColor }]}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
+                    </View>
+                    <TouchableOpacity 
+                        style={[styles.filterBtn, { backgroundColor: primaryColor }]} 
+                        onPress={handleOpenFilters}
+                    >
+                        <SlidersHorizontal size={20} color="#FFF" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Contenu Restant */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.promoContainer} snapToInterval={310} decelerationRate="fast">
                     {offers.map((offer) => (
                         <CardPromo key={offer.id} offer={offer} />
                     ))}
                 </ScrollView>
-            )}
+                
+                <Text style={[styles.sectionTitle, { color: textColor }]}>Catégories</Text>
 
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Catégories</Text>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {/* On passe setSelectedCategory pour que le clic fonctionne */}
-                <CardCategory 
-                    cat={{ id: 'all', name: 'Tout', icon: '🍽️' }} 
-                    isSelected={selectedCategory === null || selectedCategory === 'Tout'} 
-                    setSelectedCategory={setSelectedCategory}
-                />
-
-                {categories.map((cat) => (
-                    <CardCategory
-                        key={cat.id}
-                        cat={cat}
-                        isSelected={selectedCategory === cat.name}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+                    <CardCategory 
+                        cat={{ id: 'all', name: 'Tout', icon: '🍽️' }} 
+                        isSelected={selectedCategory === null || selectedCategory === 'Tout'} 
                         setSelectedCategory={setSelectedCategory}
                     />
+                    {categories.map((cat) => (
+                        <CardCategory
+                            key={cat.id}
+                            cat={cat}
+                            isSelected={selectedCategory === cat.name}
+                            setSelectedCategory={setSelectedCategory}
+                        />
+                    ))}
+                </ScrollView>
+
+                <Text style={[styles.sectionTitle, { color: textColor }]}>
+                    {selectedCategory && selectedCategory !== 'Tout' 
+                        ? `Restaurants : ${selectedCategory}` 
+                        : 'Populaires à proximité'}
+                </Text>
+
+                {filteredRestaurants.map((resto) => (
+                    <CardRestaurant key={resto.id} resto={resto} />
                 ))}
+
+                {filteredRestaurants.length === 0 && (
+                    <View style={styles.emptyContainer}>
+                        <Text style={{ color: textMuted, textAlign: 'center', fontSize: 16 }}>
+                            {`Aucun résultat pour "${searchQuery || selectedCategory}" 🍕`}
+                        </Text>
+                    </View>
+                )}
+                
+                <View style={{ height: 100 }} />
             </ScrollView>
 
-            <Text style={[styles.sectionTitle, { color: textColor }]}>
-                {selectedCategory && selectedCategory !== 'Tout' 
-                    ? `Restaurants : ${selectedCategory}` 
-                    : 'Populaires à proximité'}
-            </Text>
-
-            {filteredRestaurants.length > 0 ? (
-                filteredRestaurants.map((resto) => (
-                    <CardRestaurant key={resto.id} resto={resto} />
-                ))
-            ) : (
-                <View style={styles.emptyContainer}>
-                    <Text style={{ color: textMuted, textAlign: 'center', fontSize: 16 }}>
-                        {`Aucun résultat trouvé pour "${searchQuery || selectedCategory}" 🍕`}
-                    </Text>
-                </View>
-            )}
-            
-            <View style={{ height: 100 }} />
-        </ScrollView>
+            {/* LE COMPOSANT DOIT ÊTRE ICI (HORS SCROLLVIEW) */}
+            <FilterBottomSheet 
+                ref={bottomSheetRef} 
+                onApply={(sortType) => setActiveSort(sortType)} 
+            />
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1, paddingHorizontal: 20 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 60 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 60, marginBottom: 20 },
     locationContainer: { flex: 1, marginRight: 20 },
-    deliveryTo: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+    deliveryTo: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginBottom: 4 },
     locationRow: { flexDirection: 'row', alignItems: 'center' },
     iconCircle: { padding: 6, borderRadius: 10, marginRight: 8 },
     address: { fontWeight: '700', fontSize: 16, maxWidth: '80%' },
-    dropdownArrow: { marginLeft: 5, fontSize: 18, fontWeight: 'bold', marginTop: -5 },
+    dropdownArrow: { marginLeft: 5, fontSize: 18, fontWeight: 'bold' },
     profileContainer: { position: 'relative' },
     profilePic: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center', elevation: 5 },
     profileInitial: { color: '#FFF', fontWeight: 'bold', fontSize: 18 },
     onlineBadge: { position: 'absolute', right: -2, top: -2, width: 14, height: 14, borderRadius: 7, backgroundColor: '#4CAF50', borderWidth: 2 },
-    searchSection: { marginTop: 10 },
-    searchBar: { flexDirection: 'row', padding: 12, borderRadius: 15, alignItems: 'center' },
+    searchSection: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 },
+    searchBar: { flex: 1, flexDirection: 'row', padding: 12, borderRadius: 15, alignItems: 'center' },
     searchInput: { marginLeft: 10, flex: 1, fontSize: 16 },
+    filterBtn: { padding: 12, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     promoContainer: { marginTop: 25 },
     sectionTitle: { fontSize: 20, fontWeight: 'bold', marginVertical: 20 },
     emptyContainer: { padding: 50, alignItems: 'center' }

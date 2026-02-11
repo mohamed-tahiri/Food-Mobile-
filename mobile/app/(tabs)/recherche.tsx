@@ -7,7 +7,7 @@ import {
     ScrollView,
     TouchableOpacity,
 } from 'react-native';
-import { Search, History, TrendingUp, Filter, X } from 'lucide-react-native';
+import { Search, History, TrendingUp, X } from 'lucide-react-native';
 import { cuisines, restaurants } from '@/data/dataMocket';
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
 import { Resto } from '@/types/resto';
@@ -27,13 +27,12 @@ export default function SearchScreen() {
 
     useEffect(() => {
         if (searchText.trim().length > 0) {
-            const filtered = restaurants.filter(
+            let filtered = restaurants.filter(
                 (resto) =>
-                    resto.name
-                        .toLowerCase()
-                        .includes(searchText.toLowerCase()) ||
+                    resto.name.toLowerCase().includes(searchText.toLowerCase()) ||
                     resto.type.toLowerCase().includes(searchText.toLowerCase()),
             );
+
             setFilteredRestos(filtered);
         } else {
             setFilteredRestos([]);
@@ -46,9 +45,7 @@ export default function SearchScreen() {
         <View style={[styles.container, { backgroundColor }]}>
             {/* HEADER */}
             <View style={[styles.header, { backgroundColor: headerColor }]}>
-                <Text style={[styles.title, { color: textColor }]}>
-                    Rechercher
-                </Text>
+                <Text style={[styles.title, { color: textColor }]}>Rechercher</Text>
                 <View style={styles.searchContainer}>
                     <View
                         style={[
@@ -75,14 +72,6 @@ export default function SearchScreen() {
                             </TouchableOpacity>
                         )}
                     </View>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterBtn,
-                            { backgroundColor: primaryColor },
-                        ]}
-                    >
-                        <Filter size={20} color="#FFF" />
-                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -92,69 +81,52 @@ export default function SearchScreen() {
             >
                 {searchText.length > 0 ? (
                     <View style={styles.resultsSection}>
-                        <Text
-                            style={[styles.resultsCount, { color: textMuted }]}
-                        >
-                            {filteredRestos.length} résultats trouvés
-                        </Text>
+                        <View style={styles.resultsHeader}>
+                            <Text style={[styles.resultsCount, { color: textMuted }]}>
+                                {filteredRestos.length} résultats trouvés
+                            </Text>
+                        </View>
+
                         {filteredRestos.map((resto) => (
                             <CardRestaurant key={resto.id} resto={resto} />
                         ))}
+
                         {filteredRestos.length === 0 && (
                             <View style={styles.emptyState}>
-                                <Text
-                                    style={[
-                                        styles.emptyText,
-                                        { color: textMuted },
-                                    ]}
-                                >
-                                    Aucun restaurant ne correspond à votre
-                                    recherche.
+                                <Text style={[styles.emptyText, { color: textMuted }]}>
+                                    {`Aucun résultat pour ${searchText} 🍕`}
                                 </Text>
                             </View>
                         )}
                     </View>
                 ) : (
                     <>
+                        {/* Section Récents */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
-                                <Text style={[ styles.sectionTitle, { color: textColor }]}>
-                                    Récents
-                                </Text>
+                                <Text style={[styles.sectionTitle, { color: textColor }]}>Récents</Text>
                                 <TouchableOpacity>
-                                    <Text style={styles.clearAllText}>
-                                        Effacer
-                                    </Text>
+                                    <Text style={styles.clearAllText}>Effacer</Text>
                                 </TouchableOpacity>
                             </View>
                             <View style={styles.chipContainer}>
-                                {['Sushi', 'Pizza Hut', 'Burger'].map(
-                                    (item, i) => (
-                                        <TouchableOpacity
-                                            key={i}
-                                            style={[ styles.chip, { backgroundColor: headerColor, borderColor: borderColor }]}
-                                            onPress={() => setSearchText(item)}
-                                        >
-                                            <History size={14} color={primaryColor} style={{ marginRight: 6 }} />
-                                            <Text style={[ styles.chipText, { color: textColor }]}>
-                                                {item}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ),
-                                )}
+                                {['Sushi', 'Pizza', 'Burger'].map((item, i) => (
+                                    <TouchableOpacity
+                                        key={i}
+                                        style={[styles.chip, { backgroundColor: headerColor, borderColor: borderColor }]}
+                                        onPress={() => setSearchText(item)}
+                                    >
+                                        <History size={14} color={primaryColor} style={{ marginRight: 6 }} />
+                                        <Text style={[styles.chipText, { color: textColor }]}>{item}</Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
                         </View>
 
+                        {/* Section Cuisine */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
-                                <Text
-                                    style={[
-                                        styles.sectionTitle,
-                                        { color: textColor },
-                                    ]}
-                                >
-                                    Parcourir par cuisine
-                                </Text>
+                                <Text style={[styles.sectionTitle, { color: textColor }]}>Parcourir par cuisine</Text>
                                 <TrendingUp size={16} color={textMuted} />
                             </View>
                             <View style={styles.grid}>
@@ -190,9 +162,11 @@ const styles = StyleSheet.create({
     chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     chip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 25, elevation: 1 },
     chipText: { fontWeight: '500' },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between',},
+    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
     resultsSection: { paddingHorizontal: 20, marginTop: 20 },
-    resultsCount: { fontSize: 14, marginBottom: 20 },
+    resultsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    resultsCount: { fontSize: 14 },
+    activeSortBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
     emptyState: { alignItems: 'center', marginTop: 50 },
     emptyText: { textAlign: 'center', fontSize: 16 },
 });
