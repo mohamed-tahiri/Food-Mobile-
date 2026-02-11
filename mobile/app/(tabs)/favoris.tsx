@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { Heart } from 'lucide-react-native';
-import { favorites } from '@/data/dataMocket';
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useFavorites } from '@/context/FavoriteContext';
 
 export default function FavoritesScreen() {
-    // 1. Couleurs thématiques
+    const { favorites } = useFavorites();
+    
     const backgroundColor = useThemeColor({}, 'background');
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
@@ -29,7 +30,7 @@ export default function FavoritesScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
                     paddingHorizontal: 20,
-                    paddingBottom: 100, // Ajusté pour la TabBar
+                    paddingBottom: 100,
                 }}
                 renderItem={({ item }) => <CardRestaurant resto={item} />}
                 ListEmptyComponent={

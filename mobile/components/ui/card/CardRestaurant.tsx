@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Resto } from '@/types/resto';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useFavorites } from '@/context/FavoriteContext';
 
 interface CardRestaurantProps {
     resto: Resto;
@@ -11,12 +12,15 @@ interface CardRestaurantProps {
 
 export default function CardRestaurant({ resto }: CardRestaurantProps) {
     const router = useRouter();
+    const { toggleFavorite, isFavorite } = useFavorites();
 
-    // 1. Récupération des couleurs dynamiques
     const cardBg = useThemeColor({}, 'card');
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
     const borderColor = useThemeColor({}, 'border');
+
+    // On vérifie si ce resto est dans les favoris du context
+    const active = isFavorite(resto.id);
 
     return (
         <TouchableOpacity
@@ -26,9 +30,7 @@ export default function CardRestaurant({ resto }: CardRestaurantProps) {
                 router.push({
                     pathname: '/restaurant/[id]',
                     params: {
-                        id: resto.id,
-                        name: resto.name,
-                        imageUrl: resto.imageUrl,
+                        id: resto.id
                     },
                 })
             }
@@ -48,18 +50,22 @@ export default function CardRestaurant({ resto }: CardRestaurantProps) {
                     </View>
                 )}
 
+                {/* 3. Bouton Cœur Connecté */}
                 <TouchableOpacity
                     style={[styles.heartBtn, { backgroundColor: cardBg }]}
+                    onPress={(e) => {
+                        e.stopPropagation(); // Empêche d'ouvrir la page du resto quand on clique sur le cœur
+                        toggleFavorite(resto.id);
+                    }}
                 >
                     <Heart
                         size={20}
-                        color={resto.isFavorite ? '#FF3B30' : '#FF6B35'}
-                        fill={resto.isFavorite ? '#FF3B30' : 'transparent'}
+                        color={active ? '#FF3B30' : '#FF6B35'}
+                        fill={active ? '#FF3B30' : 'transparent'}
                     />
                 </TouchableOpacity>
             </View>
 
-            {/* Section Informations */}
             <View style={styles.content}>
                 <View style={styles.titleRow}>
                     <Text
@@ -121,7 +127,7 @@ const styles = StyleSheet.create({
         height: 180,
         width: '100%',
         position: 'relative',
-        backgroundColor: '#222', // Fond plus sombre pendant le chargement de l'image
+        backgroundColor: '#222',
     },
     image: {
         width: '100%',

@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { MenuItem } from '@/types/menuItem';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCart } from '@/context/CartContext';
+import { useRouter } from 'expo-router'; // Changement ici
 
 interface CardMenuItemProps {
     item: MenuItem;
@@ -13,23 +14,35 @@ interface CardMenuItemProps {
 
 export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
     const { addToCart } = useCart();
+    const router = useRouter();
     
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
     const backgroundColor = useThemeColor({}, 'background');
     const primaryColor = useThemeColor({}, 'primary');
 
+    // Ajout au panier avec retour haptique
     const handleAdd = () => {
         addToCart(item);
-        // Petite vibration pour le feeling "Premium"
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    };
+
+    const handlePress = () => {
+        if (onPress) {
+            onPress();
+        } else {
+            router.push({
+                pathname: '/restaurant/dish/[id]',
+                params: { id: item.id },
+            });
+        }
     };
 
     return (
         <TouchableOpacity
             activeOpacity={0.7}
             style={styles.foodCard}
-            onPress={onPress}
+            onPress={handlePress}
         >
             <View style={styles.foodInfo}>
                 <Text style={[styles.foodName, { color: textColor }]}>
@@ -42,22 +55,27 @@ export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
                     {item.desc}
                 </Text>
                 <Text style={[styles.foodPrice, { color: primaryColor }]}>
-                    {item.price} €
+                    {item.price.toFixed(2)} €
                 </Text>
             </View>
 
             <View style={styles.foodImageWrapper}>
                 <Image source={{ uri: item.img }} style={styles.foodImage} />
+                
+                {/* Bouton d'ajout rapide */}
                 <TouchableOpacity
                     style={[
                         styles.addBtn,
                         {
                             backgroundColor: primaryColor,
-                            borderColor: backgroundColor, // La bordure s'adapte au fond pour l'effet de découpe
+                            borderColor: backgroundColor, 
                         },
                     ]}
                     activeOpacity={0.8}
-                    onPress={handleAdd}
+                    onPress={(e) => {
+                        e.stopPropagation(); // TRÈS IMPORTANT : évite de déclencher handlePress
+                        handleAdd();
+                    }}
                 >
                     <Plus size={20} color="#FFF" />
                 </TouchableOpacity>
@@ -90,13 +108,14 @@ const styles = StyleSheet.create({
     },
     addBtn: {
         position: 'absolute',
-        bottom: -10,
-        right: -10,
+        bottom: -5,
+        right: -5,
         width: 35,
         height: 35,
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 3,
+        zIndex: 10,
     },
 });
