@@ -6,17 +6,22 @@ import {
     TextInput,
     ScrollView,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
 import { Search, History, TrendingUp, X } from 'lucide-react-native';
-import { cuisines, restaurants } from '@/data/dataMocket';
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
 import { Resto } from '@/types/resto';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import CardCuisineItem from '@/components/ui/card/CardCuisineItem';
+import CardCuisineItem from '@/components/ui/card/CardCuisineItem'; // Assure-toi que ce composant accepte 'item' de type Category
+import { ENDPOINTS } from '@/constants/api';
+import { Category } from '@/types/category';
 
 export default function SearchScreen() {
     const [searchText, setSearchText] = useState('');
+    const [allRestos, setAllRestos] = useState<Resto[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [filteredRestos, setFilteredRestos] = useState<Resto[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const backgroundColor = useThemeColor({}, 'background');
     const headerColor = useThemeColor({}, 'tabBar'); 
@@ -25,46 +30,72 @@ export default function SearchScreen() {
     const primaryColor = useThemeColor({}, 'primary');
     const borderColor = useThemeColor({}, 'border');
 
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [resRestos, resCats] = await Promise.all([
+                fetch(ENDPOINTS.RESTAURANTS),
+                fetch(ENDPOINTS.CATEGORIES)
+            ]);
+
+            const jsonRestos = await resRestos.json();
+            const jsonCats = await resCats.json();
+
+            // Adaptation selon si ton API renvoie { data: [] } ou directement []
+            setAllRestos(jsonRestos.data || jsonRestos);
+            setCategories(jsonCats.data || jsonCats);
+        } catch (error) {
+            console.error("Erreur Fetch API Search :", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        if (searchText.trim().length > 0) {
-            let filtered = restaurants.filter(
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        const query = searchText.trim().toLowerCase();
+        
+        if (query.length > 0) {
+            let matches = allRestos.filter(
                 (resto) =>
-                    resto.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                    resto.type.toLowerCase().includes(searchText.toLowerCase()),
+                    resto.name.toLowerCase().includes(query) ||
+                    resto.cuisine?.some(c => c.toLowerCase().includes(query))
             );
 
-            setFilteredRestos(filtered);
+            // Lissage (Objectif Mohamed : Toujours au moins 3 restos)
+            if (matches.length < 3) {
+                const suggestions = allRestos
+                    .filter(r => !matches.find(m => m.id === r.id))
+                    .sort((a, b) => b.rating - a.rating)
+                    .slice(0, 3 - matches.length);
+                
+                matches = [...matches, ...suggestions];
+            }
+
+            setFilteredRestos(matches);
         } else {
             setFilteredRestos([]);
         }
-    }, [searchText]);
+    }, [searchText, allRestos]);
 
     const clearSearch = () => setSearchText('');
 
     return (
         <View style={[styles.container, { backgroundColor }]}>
-            {/* HEADER */}
             <View style={[styles.header, { backgroundColor: headerColor }]}>
                 <Text style={[styles.title, { color: textColor }]}>Rechercher</Text>
                 <View style={styles.searchContainer}>
-                    <View
-                        style={[
-                            styles.searchBar,
-                            {
-                                backgroundColor: backgroundColor,
-                                borderColor: borderColor,
-                                borderWidth: 1,
-                            },
-                        ]}
-                    >
+                    <View style={[styles.searchBar, { backgroundColor, borderColor, borderWidth: 1 }]}>
                         <Search size={20} color={textMuted} />
                         <TextInput
-                            placeholder="Restaurants ou plats..."
+                            placeholder="Restaurants ou cuisines..."
                             placeholderTextColor={textMuted}
                             style={[styles.input, { color: textColor }]}
                             value={searchText}
                             onChangeText={setSearchText}
-                            autoFocus={false}
                         />
                         {searchText.length > 0 && (
                             <TouchableOpacity onPress={clearSearch}>
@@ -75,45 +106,46 @@ export default function SearchScreen() {
                 </View>
             </View>
 
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-            >
-                {searchText.length > 0 ? (
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                {isLoading ? (
+                    <ActivityIndicator size="large" color={primaryColor} style={{ marginTop: 50 }} />
+                ) : searchText.length > 0 ? (
                     <View style={styles.resultsSection}>
-                        <View style={styles.resultsHeader}>
-                            <Text style={[styles.resultsCount, { color: textMuted }]}>
-                                {filteredRestos.length} résultats trouvés
-                            </Text>
-                        </View>
+                        <Text style={[styles.resultsCount, { color: textMuted }]}>
+                            {filteredRestos.filter(r => r.name.toLowerCase().includes(searchText.toLowerCase())).length} correspondances directes
+                        </Text>
 
-                        {filteredRestos.map((resto) => (
-                            <CardRestaurant key={resto.id} resto={resto} />
-                        ))}
-
-                        {filteredRestos.length === 0 && (
-                            <View style={styles.emptyState}>
-                                <Text style={[styles.emptyText, { color: textMuted }]}>
-                                    {`Aucun résultat pour ${searchText} 🍕`}
-                                </Text>
-                            </View>
-                        )}
+                        {filteredRestos.map((resto, index) => {
+                            const isMatch = resto.name.toLowerCase().includes(searchText.toLowerCase()) || 
+                                          resto.cuisine?.some(c => c.toLowerCase().includes(searchText.toLowerCase()));
+                            
+                            return (
+                                <View key={resto.id}>
+                                    {!isMatch && index > 0 && (
+                                        <View style={styles.suggestionHeader}>
+                                            <Text style={[styles.suggestionTitle, { color: textColor }]}>Suggestions pour vous</Text>
+                                        </View>
+                                    )}
+                                    <CardRestaurant resto={resto} />
+                                </View>
+                            );
+                        })}
                     </View>
                 ) : (
                     <>
-                        {/* Section Récents */}
+                        {/* Section Historique / Récents */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Text style={[styles.sectionTitle, { color: textColor }]}>Récents</Text>
                                 <TouchableOpacity>
-                                    <Text style={styles.clearAllText}>Effacer</Text>
+                                    <Text style={[styles.clearAllText, { color: primaryColor }]}>Effacer</Text>
                                 </TouchableOpacity>
                             </View>
                             <View style={styles.chipContainer}>
                                 {['Sushi', 'Pizza', 'Burger'].map((item, i) => (
                                     <TouchableOpacity
                                         key={i}
-                                        style={[styles.chip, { backgroundColor: headerColor, borderColor: borderColor }]}
+                                        style={[styles.chip, { backgroundColor: headerColor, borderColor }]}
                                         onPress={() => setSearchText(item)}
                                     >
                                         <History size={14} color={primaryColor} style={{ marginRight: 6 }} />
@@ -123,18 +155,19 @@ export default function SearchScreen() {
                             </View>
                         </View>
 
-                        {/* Section Cuisine */}
+                        {/* Section Parcourir (API Dynamique) */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Text style={[styles.sectionTitle, { color: textColor }]}>Parcourir par cuisine</Text>
                                 <TrendingUp size={16} color={textMuted} />
                             </View>
                             <View style={styles.grid}>
-                                {cuisines.map((item) => (
+                                {categories.map((cat) => (
                                     <CardCuisineItem
-                                        key={item.id}
-                                        item={item}
-                                        setSearchText={setSearchText}
+                                        key={cat.id}
+                                        item={cat}
+                                        // On utilise le nom de la catégorie pour déclencher la recherche
+                                        setSearchText={setSearchText} 
                                     />
                                 ))}
                             </View>
@@ -153,20 +186,17 @@ const styles = StyleSheet.create({
     searchContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     searchBar: { flex: 1, flexDirection: 'row', padding: 12, borderRadius: 15, alignItems: 'center' },
     input: { flex: 1, marginLeft: 10, fontSize: 16 },
-    filterBtn: { padding: 12, borderRadius: 15, elevation: 2 },
     scrollContent: { paddingBottom: 100 },
     section: { marginTop: 25, paddingHorizontal: 20 },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     sectionTitle: { fontSize: 18, fontWeight: 'bold' },
-    clearAllText: { color: '#FF6B35', fontSize: 14, fontWeight: '500' },
+    clearAllText: { fontSize: 14, fontWeight: '600' },
     chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    chip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 25, elevation: 1 },
+    chip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 25, borderWidth: 1 },
     chipText: { fontWeight: '500' },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 10 },
     resultsSection: { paddingHorizontal: 20, marginTop: 20 },
-    resultsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    resultsCount: { fontSize: 14 },
-    activeSortBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-    emptyState: { alignItems: 'center', marginTop: 50 },
-    emptyText: { textAlign: 'center', fontSize: 16 },
+    resultsCount: { fontSize: 14, marginBottom: 15 },
+    suggestionHeader: { marginTop: 10, marginBottom: 20, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingTop: 20 },
+    suggestionTitle: { fontSize: 18, fontWeight: 'bold' }
 });

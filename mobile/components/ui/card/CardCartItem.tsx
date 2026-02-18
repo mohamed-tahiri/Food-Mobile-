@@ -26,7 +26,7 @@ export default function CardCartItem({
 }: CardCartItemProps) {
     return (
         <View style={[styles.itemCard, { backgroundColor: cardBg }]}>
-            <Image source={{ uri: item.img }} style={styles.itemImage} />
+            <Image source={{ uri: item.image }} style={styles.itemImage} />
             
             <View style={styles.itemInfo}>
                 <Text style={[styles.itemName, { color: textColor }]} numberOfLines={1}>

@@ -6,17 +6,21 @@ import {
     ScrollView,
     TextInput,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
 import { Search, MapPin, SlidersHorizontal } from 'lucide-react-native';
 import CardPromo from '@/components/ui/card/CardPromo';
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
-import { categories, offers, restaurants } from '@/data/dataMocket';
+import { offers } from '@/data/dataMocket';
 import CardCategory from '@/components/ui/card/CardCategory';
 import { useRouter } from 'expo-router';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getCurrentAddress } from '@/services/localisation.service';
 import FilterBottomSheet from '@/components/ui/FilterBottomSheet';
 import BottomSheet from '@gorhom/bottom-sheet';
+import { ENDPOINTS } from '@/constants/api';
+import { Resto } from '@/types/resto';
+import { Category } from '@/types/category';
 
 export default function HomeScreen() {
     const bottomSheetRef = useRef<BottomSheet>(null);
@@ -24,6 +28,10 @@ export default function HomeScreen() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeSort, setActiveSort] = useState<string | null>(null);
+
+    const [dataRestaurants, setDataRestaurants] = useState<Resto[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const router = useRouter();
 
@@ -38,33 +46,59 @@ export default function HomeScreen() {
         bottomSheetRef.current?.expand();
     }, []);
 
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            // On lance les deux appels en même temps pour gagner du temps
+            const [resRestos, resCats] = await Promise.all([
+                fetch(ENDPOINTS.RESTAURANTS),
+                fetch(ENDPOINTS.CATEGORIES)
+            ]);
+
+            const jsonRestos = await resRestos.json();
+            const jsonCats = await resCats.json();
+
+            setDataRestaurants(jsonRestos.data || jsonRestos);
+            setCategories(jsonCats.data || jsonCats);
+        } catch (error) {
+            console.error("Erreur Fetch API :", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
+        fetchData();
         const fetchLocation = async () => {
             try {
                 const address = await getCurrentAddress();
                 setDisplayAddress(address);
             } catch (err) {
-                console.log('Erreur localisation :', err);
                 setDisplayAddress("13 Allée de la Noiseraie, Noisy-le-Grand");
             }
         };
         fetchLocation();
     }, []);
 
-    // LOGIQUE DE FILTRAGE + TRI
-    const filteredRestaurants = restaurants.filter((resto) => {
-        const normalizedType = resto.type?.toLowerCase().trim() || "";
-        const normalizedName = resto.name.toLowerCase().trim();
+    // LOGIQUE DE FILTRAGE + TRI CORRIGÉE
+    const filteredRestaurants = dataRestaurants.filter((resto: Resto) => {
         const search = searchQuery.toLowerCase().trim();
-        const isAllSelected = !selectedCategory || selectedCategory === 'Tout';
+        const normalizedName = resto.name.toLowerCase();
         
-        const matchCategory = isAllSelected ? true : normalizedType.includes(selectedCategory!.toLowerCase().trim());
-        const matchSearch = normalizedName.includes(search) || normalizedType.includes(search);
+        // On vérifie si une des cuisines correspond à la catégorie sélectionnée
+        const isAllSelected = !selectedCategory || selectedCategory === 'Tout';
+        const matchCategory = isAllSelected 
+            ? true 
+            : resto.cuisine?.some(c => c.toLowerCase().includes(selectedCategory!.toLowerCase()));
+        
+        // Recherche par nom ou par type de cuisine
+        const matchSearch = normalizedName.includes(search) || 
+                           resto.cuisine?.some(c => c.toLowerCase().includes(search));
 
         return matchCategory && matchSearch;
     }).sort((a, b) => {
-        if (activeSort === 'rating') return parseFloat(b.rating) - parseFloat(a.rating);
-        if (activeSort === 'time') return parseInt(a.time) - parseInt(b.time);
+        if (activeSort === 'rating') return b.rating - a.rating;
+        if (activeSort === 'time') return a.deliveryTime.max - b.deliveryTime.max;
         return 0;
     });
 
@@ -128,11 +162,11 @@ export default function HomeScreen() {
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                     <CardCategory 
-                        cat={{ id: 'all', name: 'Tout', icon: '🍽️' }} 
+                        cat={{ id: 'all', name: 'Tout', icon: '🍽️', slug: '', image:'', restaurantCount: 0 }} 
                         isSelected={selectedCategory === null || selectedCategory === 'Tout'} 
                         setSelectedCategory={setSelectedCategory}
                     />
-                    {categories.map((cat) => (
+                    {categories.map((cat: Category) => (
                         <CardCategory
                             key={cat.id}
                             cat={cat}
@@ -148,22 +182,27 @@ export default function HomeScreen() {
                         : 'Populaires à proximité'}
                 </Text>
 
-                {filteredRestaurants.map((resto) => (
-                    <CardRestaurant key={resto.id} resto={resto} />
-                ))}
+                {isLoading ? (
+                    <ActivityIndicator size="large" color={primaryColor} style={{ marginTop: 50 }} />
+                ) : (
+                    <>
+                        {filteredRestaurants.map((resto: Resto) => (
+                            <CardRestaurant key={resto.id} resto={resto} />
+                        ))}
 
-                {filteredRestaurants.length === 0 && (
-                    <View style={styles.emptyContainer}>
-                        <Text style={{ color: textMuted, textAlign: 'center', fontSize: 16 }}>
-                            {`Aucun résultat pour "${searchQuery || selectedCategory}" 🍕`}
-                        </Text>
-                    </View>
+                        {filteredRestaurants.length === 0 && (
+                            <View style={styles.emptyContainer}>
+                                <Text style={{ color: textMuted, textAlign: 'center', fontSize: 16 }}>
+                                    {`Aucun résultat trouvé 🍕`}
+                                </Text>
+                            </View>
+                        )}
+                    </>
                 )}
                 
                 <View style={{ height: 100 }} />
             </ScrollView>
 
-            {/* LE COMPOSANT DOIT ÊTRE ICI (HORS SCROLLVIEW) */}
             <FilterBottomSheet 
                 ref={bottomSheetRef} 
                 onApply={(sortType) => setActiveSort(sortType)} 
@@ -172,6 +211,7 @@ export default function HomeScreen() {
     );
 }
 
+// Les styles restent les mêmes que précédemment
 const styles = StyleSheet.create({
     container: { flex: 1, paddingHorizontal: 20 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 60, marginBottom: 20 },

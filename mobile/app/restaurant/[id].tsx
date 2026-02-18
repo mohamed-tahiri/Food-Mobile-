@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -10,6 +10,7 @@ import {
     Share,
     Linking,
     Platform,
+    ActivityIndicator,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Star, Clock, Heart, Share2, Phone, Navigation } from 'lucide-react-native';
@@ -17,11 +18,20 @@ import CardMenuItem from '@/components/ui/card/CardMenuItem';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCart } from '@/context/CartContext';
 import { useFavorites } from '@/context/FavoriteContext';
-import { restaurants } from '@/data/dataMocket';
+import { ENDPOINTS } from '@/constants/api';
+import { ApiResponse, Resto } from '@/types/resto';
+import { MenuCategory } from '@/types/menuItem';
 
 const { width } = Dimensions.get('window');
 
 export default function RestaurantDetail() {
+    const { id } = useLocalSearchParams();
+    const router = useRouter();
+    
+    // État typé directement sur l'objet métier Resto
+    const [restaurant, setRestaurant] = useState<Resto | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
     const backgroundColor = useThemeColor({}, 'background');
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
@@ -30,10 +40,32 @@ export default function RestaurantDetail() {
 
     const { totalItems, totalPrice } = useCart();
     const { toggleFavorite, isFavorite } = useFavorites();
-    const { id } = useLocalSearchParams();
-    const router = useRouter();
-    
-    const restaurant = restaurants.find((r) => r.id === id);
+
+    useEffect(() => {
+        const fetchDetails = async () => {
+            setIsLoading(true);
+            try {
+                const resDetails = await fetch(ENDPOINTS.RESTAURANT_DETAILS(id as string));
+                const jsonDetails: ApiResponse<Resto> = await resDetails.json();
+
+                const resMenu = await fetch(ENDPOINTS.RESTAURANT_MENU(id as string));
+                const jsonMenu: ApiResponse<MenuCategory[]> = await resMenu.json();
+
+                if (jsonDetails.success && jsonMenu.success) {
+                    setRestaurant({
+                        ...jsonDetails.data,
+                        menuCategories: jsonMenu.data
+                    });
+                }
+            } catch (error) {
+                console.error("Erreur de liaison API:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (id) fetchDetails();
+    }, [id]);
 
     const handleCall = () => {
         if (restaurant?.phone) Linking.openURL(`tel:${restaurant.phone}`);
@@ -61,15 +93,21 @@ export default function RestaurantDetail() {
         }
     };
 
+    if (isLoading) {
+        return (
+            <View style={[styles.loaderContainer, { backgroundColor }]}>
+                <ActivityIndicator size="large" color={primaryColor} />
+            </View>
+        );
+    }
+
     return (
         <View style={[styles.container, { backgroundColor }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <View style={styles.imageHeader}>
                 <Image
-                    source={{
-                        uri: restaurant?.imageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
-                    }}
+                    source={{ uri: restaurant?.image }}
                     style={styles.mainImage}
                     resizeMode="cover"
                 />
@@ -99,23 +137,22 @@ export default function RestaurantDetail() {
                 contentContainerStyle={{ paddingBottom: 150 }}
             >
                 <View style={styles.infoSection}>
-                    <Text style={[styles.title, { color: textColor }]}>
-                        {restaurant?.name || 'Détails du Restaurant'}
-                    </Text>
+                    <Text style={[styles.title, { color: textColor }]}>{restaurant?.name}</Text>
 
                     <View style={styles.metaRow}>
                         <View style={[styles.ratingBox, { backgroundColor: '#FFB30020' }]}>
                             <Star size={16} color="#FFB300" fill="#FFB300" />
-                            <Text style={styles.ratingText}> {restaurant?.rating || '4.5'}</Text>
-                            <Text style={[styles.reviewText, { color: textMuted }]}> (200+ avis)</Text>
+                            <Text style={styles.ratingText}> {restaurant?.rating}</Text>
+                            <Text style={[styles.reviewText, { color: textMuted }]}> ({restaurant?.reviewCount} avis)</Text>
                         </View>
                         <View style={styles.timeBox}>
                             <Clock size={16} color={textMuted} />
-                            <Text style={[styles.timeText, { color: textMuted }]}> {restaurant?.time || '20-30 min'}</Text>
+                            <Text style={[styles.timeText, { color: textMuted }]}> 
+                                {' '}{restaurant?.deliveryTime?.min}-{restaurant?.deliveryTime?.max} min
+                            </Text>
                         </View>
                     </View>
 
-                    {/* Section Actions Rapides */}
                     <View style={[styles.actionRow, { borderTopColor: borderColor, borderBottomColor: borderColor }]}>
                         <TouchableOpacity style={styles.contactAction} onPress={handleCall}>
                             <View style={[styles.actionIconCircle, { backgroundColor: primaryColor + '15' }]}>
@@ -133,12 +170,14 @@ export default function RestaurantDetail() {
                     </View>
                 </View>
 
-                <View style={[styles.divider, { backgroundColor: borderColor }]} />
-
-                <Text style={[styles.sectionTitle, { color: textColor }]}>Menu populaire</Text>
-
-                {restaurant?.menus.map((item) => (
-                    <CardMenuItem key={item.id} item={item} />
+                {/* DOUBLE BOUCLE POUR LES MENUS PAR CATÉGORIE */}
+                {restaurant?.menuCategories?.map((category) => (
+                    <View key={category.id} style={styles.menuSection}>
+                        <Text style={[styles.sectionTitle, { color: textColor }]}>{category.name}</Text>
+                        {category.items.map((item) => (
+                            <CardMenuItem key={item.id} menuId={String(id)} item={item} />
+                        ))}
+                    </View>
                 ))}
             </ScrollView>
 
@@ -163,6 +202,7 @@ export default function RestaurantDetail() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     imageHeader: { height: 260, width: width, position: 'relative' },
     mainImage: { width: '100%', height: '100%' },
     overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.1)' },
@@ -198,41 +238,17 @@ const styles = StyleSheet.create({
     timeText: { fontWeight: '500' },
     actionRow: {
         flexDirection: 'row',
-        paddingTop: 20,
+        paddingVertical: 20,
         marginTop: 20,
         borderTopWidth: 1,
+        borderBottomWidth: 1,
         justifyContent: 'space-around',
     },
     contactAction: { alignItems: 'center', gap: 8 },
     actionIconCircle: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
     actionLabel: { fontSize: 14, fontWeight: '600' },
-    sectionTitleSmall: { fontSize: 16, fontWeight: '700', marginTop: 25, marginBottom: 15 },
-    mapContainer: {
-        height: 150,
-        width: '100%',
-        borderRadius: 20,
-        overflow: 'hidden',
-        position: 'relative',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-    },
-    staticMap: { width: '100%', height: '100%' },
-    markerFixed: { position: 'absolute', top: '35%', left: '47%', padding: 8, borderRadius: 20, elevation: 5 },
-    mapOverlay: {
-        position: 'absolute',
-        bottom: 10,
-        left: 10,
-        right: 10,
-        padding: 12,
-        borderRadius: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        elevation: 2,
-    },
-    addressText: { fontSize: 13, fontWeight: '600', flex: 1 },
-    divider: { height: 1, marginTop: 30, marginBottom: 25 },
-    sectionTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+    menuSection: { marginTop: 25 },
+    sectionTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
     cartFooter: { position: 'absolute', bottom: 30, left: 20, right: 20 },
     cartBtn: {
         flexDirection: 'row',

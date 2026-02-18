@@ -2,17 +2,18 @@ import React from 'react';
 import { Plus } from 'lucide-react-native';
 import { TouchableOpacity, StyleSheet, Text, View, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { MenuItem } from '@/types/menuItem';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCart } from '@/context/CartContext';
-import { useRouter } from 'expo-router'; // Changement ici
+import { useRouter } from 'expo-router';
+import { MenuItem } from '@/types/menuItem';
 
 interface CardMenuItemProps {
     item: MenuItem;
+    menuId: string;
     onPress?: () => void;
 }
 
-export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
+export default function CardMenuItem({ item, menuId, onPress }: CardMenuItemProps) {
     const { addToCart } = useCart();
     const router = useRouter();
     
@@ -33,7 +34,7 @@ export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
         } else {
             router.push({
                 pathname: '/restaurant/dish/[id]',
-                params: { id: item.id },
+                params: { id: item.id, menuId: menuId },
             });
         }
     };
@@ -52,7 +53,7 @@ export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
                     style={[styles.foodDesc, { color: textMuted }]}
                     numberOfLines={2}
                 >
-                    {item.desc}
+                    {item.description}
                 </Text>
                 <Text style={[styles.foodPrice, { color: primaryColor }]}>
                     {item.price.toFixed(2)} €
@@ -60,7 +61,8 @@ export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
             </View>
 
             <View style={styles.foodImageWrapper}>
-                <Image source={{ uri: item.img }} style={styles.foodImage} />
+                {/* Correction : item.image au lieu de item.img */}
+                <Image source={{ uri: item.image }} style={styles.foodImage} />
                 
                 {/* Bouton d'ajout rapide */}
                 <TouchableOpacity
@@ -73,7 +75,7 @@ export default function CardMenuItem({ item, onPress }: CardMenuItemProps) {
                     ]}
                     activeOpacity={0.8}
                     onPress={(e) => {
-                        e.stopPropagation(); // TRÈS IMPORTANT : évite de déclencher handlePress
+                        e.stopPropagation(); // Évite de déclencher la navigation vers le plat
                         handleAdd();
                     }}
                 >

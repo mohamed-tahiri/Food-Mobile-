@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Star, Heart } from 'lucide-react-native';
+import { Clock, Star, Heart, MapPin } from 'lucide-react-native';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Resto } from '@/types/resto';
@@ -18,8 +18,8 @@ export default function CardRestaurant({ resto }: CardRestaurantProps) {
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
     const borderColor = useThemeColor({}, 'border');
+    const primaryColor = useThemeColor({}, 'primary');
 
-    // On vérifie si ce resto est dans les favoris du context
     const active = isFavorite(resto.id);
 
     return (
@@ -29,38 +29,37 @@ export default function CardRestaurant({ resto }: CardRestaurantProps) {
             onPress={() =>
                 router.push({
                     pathname: '/restaurant/[id]',
-                    params: {
-                        id: resto.id
-                    },
+                    params: { id: resto.id },
                 })
             }
         >
             <View style={styles.imageContainer}>
                 <Image
-                    source={{ uri: resto.imageUrl }}
+                    source={{ uri: resto.image }}
                     style={styles.image}
                     resizeMode="cover"
                 />
 
                 <View style={styles.overlay} />
 
-                {resto.promo && (
-                    <View style={styles.promoBadge}>
-                        <Text style={styles.promoText}>{resto.promo}</Text>
-                    </View>
-                )}
+                {/* Badge de prix (Ex: €€€) */}
+                <View style={styles.priceBadge}>
+                    <Text style={styles.priceText}>
+                        {Array(resto.priceRange).fill('€').join('')}
+                    </Text>
+                </View>
 
-                {/* 3. Bouton Cœur Connecté */}
+                {/* Bouton Favoris */}
                 <TouchableOpacity
                     style={[styles.heartBtn, { backgroundColor: cardBg }]}
                     onPress={(e) => {
-                        e.stopPropagation(); // Empêche d'ouvrir la page du resto quand on clique sur le cœur
+                        e.stopPropagation();
                         toggleFavorite(resto.id);
                     }}
                 >
                     <Heart
-                        size={20}
-                        color={active ? '#FF3B30' : '#FF6B35'}
+                        size={18}
+                        color={active ? '#FF3B30' : textColor}
                         fill={active ? '#FF3B30' : 'transparent'}
                     />
                 </TouchableOpacity>
@@ -68,45 +67,47 @@ export default function CardRestaurant({ resto }: CardRestaurantProps) {
 
             <View style={styles.content}>
                 <View style={styles.titleRow}>
-                    <Text
-                        style={[styles.name, { color: textColor }]}
-                        numberOfLines={1}
-                    >
+                    <Text style={[styles.name, { color: textColor }]} numberOfLines={1}>
                         {resto.name}
                     </Text>
-                    <View
-                        style={[
-                            styles.ratingBadge,
-                            { backgroundColor: '#FFB30020' },
-                        ]}
-                    >
+                    <View style={[styles.ratingBadge, { backgroundColor: '#FFB30020' }]}>
                         <Star size={12} color="#FFB300" fill="#FFB300" />
                         <Text style={styles.ratingText}>{resto.rating}</Text>
                     </View>
                 </View>
 
-                <Text style={[styles.typeText, { color: textMuted }]}>
-                    {resto.type}
+                {/* Conversion du tableau cuisine en string */}
+                <Text style={[styles.typeText, { color: textMuted }]} numberOfLines={1}>
+                    {resto.cuisine?.join(' • ')}
                 </Text>
 
                 <View style={styles.footer}>
                     <View style={styles.footerItem}>
                         <Clock size={14} color={textMuted} />
                         <Text style={[styles.footerText, { color: textMuted }]}>
-                            {' '}
-                            {resto.time}
+                            {' '}{resto.deliveryTime.min}-{resto.deliveryTime.max} min
                         </Text>
                     </View>
-                    <View
-                        style={[styles.dot, { backgroundColor: borderColor }]}
-                    />
-                    <Text style={[styles.footerText, { color: textMuted }]}>
-                        {resto.distance}
-                    </Text>
-                    <View
-                        style={[styles.dot, { backgroundColor: borderColor }]}
-                    />
-                    <Text style={styles.freeDelivery}>Livraison gratuite</Text>
+
+                    <View style={[styles.dot, { backgroundColor: borderColor }]} />
+
+                    <View style={styles.footerItem}>
+                        <MapPin size={14} color={textMuted} />
+                        <Text style={[styles.footerText, { color: textMuted }]}>
+                            {' '}Paris ({(Math.random() * 2).toFixed(1)} km)
+                        </Text>
+                    </View>
+
+                    <View style={[styles.dot, { backgroundColor: borderColor }]} />
+
+                    {/* Affichage conditionnel des frais de livraison */}
+                    {resto.deliveryFee === 0 ? (
+                        <Text style={styles.freeDelivery}>Offert</Text>
+                    ) : (
+                        <Text style={[styles.footerText, { color: textMuted }]}>
+                            {resto.deliveryFee}€ livr.
+                        </Text>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>
@@ -118,43 +119,38 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         marginBottom: 20,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 15,
         elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 5 },
     },
     imageContainer: {
-        height: 180,
+        height: 160,
         width: '100%',
         position: 'relative',
-        backgroundColor: '#222',
     },
-    image: {
-        width: '100%',
-        height: '100%',
-    },
+    image: { width: '100%', height: '100%' },
     overlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.1)',
+        backgroundColor: 'rgba(0,0,0,0.05)',
     },
-    promoBadge: {
+    priceBadge: {
         position: 'absolute',
-        top: 15,
-        left: 15,
-        backgroundColor: '#FF6B35',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 10,
-        zIndex: 2,
+        bottom: 12,
+        left: 12,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
     },
-    promoText: { color: '#FFF', fontSize: 11, fontWeight: 'bold' },
+    priceText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
     heartBtn: {
         position: 'absolute',
-        top: 15,
-        right: 15,
+        top: 12,
+        right: 12,
         padding: 8,
         borderRadius: 20,
-        zIndex: 2,
     },
     content: { padding: 16 },
     titleRow: {
@@ -176,10 +172,10 @@ const styles = StyleSheet.create({
         color: '#FFB300',
         fontSize: 13,
     },
-    typeText: { fontSize: 13, marginTop: 4 },
+    typeText: { fontSize: 13, marginTop: 4, fontWeight: '500' },
     footer: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
     footerItem: { flexDirection: 'row', alignItems: 'center' },
-    footerText: { fontSize: 12 },
+    footerText: { fontSize: 12, fontWeight: '500' },
     dot: {
         width: 3,
         height: 3,
