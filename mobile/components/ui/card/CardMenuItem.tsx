@@ -24,7 +24,7 @@ export default function CardMenuItem({ item, menuId, onPress }: CardMenuItemProp
 
     // Ajout au panier avec retour haptique
     const handleAdd = () => {
-        addToCart(item);
+        addToCart(item, menuId);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     };
 

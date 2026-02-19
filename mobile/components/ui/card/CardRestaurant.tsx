@@ -18,7 +18,6 @@ export default function CardRestaurant({ resto }: CardRestaurantProps) {
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
     const borderColor = useThemeColor({}, 'border');
-    const primaryColor = useThemeColor({}, 'primary');
 
     const active = isFavorite(resto.id);
 
