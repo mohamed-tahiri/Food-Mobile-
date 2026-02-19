@@ -21,6 +21,7 @@
     ],
     "notificationsEnabled": true,
     "createdAt": "2026-02-18T15:15:17.711Z",
-    "password": "testy"
+    "password": "testy",
+    "photo": "http://172.20.10.8:4000/uploads/1771531306088-3ac564e9-7e16-461b-85de-f9141b0858a4.jpg"
   }
 ]
