@@ -9,21 +9,24 @@ import {
     Dimensions,
     Platform,
     ActivityIndicator,
+    Share,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Share2, Plus, Minus, Clock, Flame } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient'; 
+import * as Haptics from 'expo-haptics';
+
+// Services & Contexts
+import { restaurantService } from '@/services/restaurant.service';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCart } from '@/context/CartContext';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient'; 
-import { ENDPOINTS } from '@/constants/api';
-import { ApiResponse } from '@/types/resto';
+
+// Types
 import { MenuItem } from '@/types/menuItem';
 
 const { width } = Dimensions.get('window');
 
 export default function DishScreen() {
-    // On récupère menuId (id du resto) et id (id du plat)
     const { id, menuId } = useLocalSearchParams();
     const router = useRouter();
     const { addToCart } = useCart();
@@ -32,6 +35,7 @@ export default function DishScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
 
+    // Thème
     const backgroundColor = useThemeColor({}, 'background');
     const cardColor = useThemeColor({}, 'card');
     const textColor = useThemeColor({}, 'text');
@@ -39,18 +43,21 @@ export default function DishScreen() {
     const primaryColor = useThemeColor({}, 'primary');
     const borderColor = useThemeColor({}, 'border');
 
+    /**
+     * Chargement du plat via le SERVICE
+     */
     useEffect(() => {
         const fetchDishData = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(ENDPOINTS.RESTAURANT_MENU_DISH(menuId as string, id as string));
-                const json: ApiResponse<MenuItem> = await response.json();
+                // Utilisation de la fonction optimisée de ton service
+                const res = await restaurantService.getDish(menuId as string, id as string);
 
-                if (json.success) {
-                    setDish(json.data);
+                if (res.success) {
+                    setDish(res.data);
                 }
             } catch (error) {
-                console.error("Erreur chargement item menu:", error);
+                console.error("Erreur service DishDetail:", error);
             } finally {
                 setIsLoading(false);
             }
@@ -58,6 +65,27 @@ export default function DishScreen() {
 
         if (id && menuId) fetchDishData();
     }, [id, menuId]);
+
+    const handleAddToCart = () => {
+        if (!dish) return;
+        
+        // Ajout au panier avec la quantité sélectionnée
+        for (let i = 0; i < quantity; i++) {
+            addToCart(dish, String(menuId));
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        router.back();
+    };
+
+    const onShare = async () => {
+        try {
+            await Share.share({
+                message: `Tu dois absolument goûter ce plat : ${dish?.name} ! Disponible sur Foodie App.`,
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -71,21 +99,11 @@ export default function DishScreen() {
 
     const totalPrice = dish.price * quantity;
 
-    const handleAddToCart = () => {
-        // Ajout au panier avec la quantité sélectionnée
-        for (let i = 0; i < quantity; i++) {
-            addToCart(dish);
-        }
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.back();
-    };
-
     return (
         <View style={[styles.container, { backgroundColor }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-                {/* Image avec dégradé pour la lisibilité des boutons */}
                 <View style={styles.imageContainer}>
                     <Image source={{ uri: dish.image }} style={styles.image} />
                     <LinearGradient
@@ -96,7 +114,7 @@ export default function DishScreen() {
                         <TouchableOpacity style={styles.roundBtn} onPress={() => router.back()}>
                             <ChevronLeft color="#000" size={24} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.roundBtn}>
+                        <TouchableOpacity style={styles.roundBtn} onPress={onShare}>
                             <Share2 color="#000" size={20} />
                         </TouchableOpacity>
                     </View>
@@ -110,7 +128,7 @@ export default function DishScreen() {
                         </View>
                         <View style={styles.timeTag}>
                             <Clock size={14} color={textMuted} />
-                            <Text style={{ color: textMuted, fontSize: 12, marginLeft: 4 }}>Préparé avec soin</Text>
+                            <Text style={{ color: textMuted, fontSize: 12, marginLeft: 4 }}>Préparé à la commande</Text>
                         </View>
                     </View>
 
@@ -120,22 +138,21 @@ export default function DishScreen() {
                     </View>
 
                     <Text style={[styles.description, { color: textMuted }]}>
-                        {dish.description || "Aucune description disponible pour ce plat."}
+                        {dish.description || "Une expérience gustative unique préparée par nos chefs."}
                     </Text>
 
                     <View style={[styles.divider, { backgroundColor: borderColor }]} />
                     
-                    {/* Information supplémentaire */}
                     <View style={[styles.infoCard, { backgroundColor: cardColor }]}>
-                        <Text style={{ color: textColor, fontWeight: 'bold' }}>Note du chef</Text>
+                        <Text style={{ color: textColor, fontWeight: 'bold' }}>Engagement Qualité</Text>
                         <Text style={{ color: textMuted, fontSize: 13, marginTop: 4 }}>
-                            Produits frais et locaux, cuisinés à la commande.
+                            Produits frais sélectionnés chaque matin pour une saveur authentique.
                         </Text>
                     </View>
                 </View>
             </ScrollView>
 
-            {/* Footer Fixe avec Sélecteur de Quantité */}
+            {/* Footer avec contrôle de quantité */}
             <View style={[styles.footer, { backgroundColor: cardColor, borderTopColor: borderColor }]}>
                 <View style={styles.quantityContainer}>
                     <TouchableOpacity 
@@ -178,32 +195,9 @@ const styles = StyleSheet.create({
     imageContainer: { height: width * 0.9, width: width },
     image: { width: '100%', height: '100%' },
     gradientOverlay: { ...StyleSheet.absoluteFillObject },
-    headerButtons: { 
-        position: 'absolute', 
-        top: 55, 
-        left: 20, 
-        right: 20, 
-        flexDirection: 'row', 
-        justifyContent: 'space-between' 
-    },
-    roundBtn: { 
-        width: 44, 
-        height: 44, 
-        borderRadius: 22, 
-        backgroundColor: '#FFF', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-    },
-    content: { 
-        padding: 24,  
-        borderTopLeftRadius: 35, 
-        borderTopRightRadius: 35, 
-        backgroundColor: 'transparent' 
-    },
+    headerButtons: { position: 'absolute', top: 55, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' },
+    roundBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', elevation: 5 },
+    content: { padding: 24, borderTopLeftRadius: 35, borderTopRightRadius: 35 },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
     tag: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
     tagText: { fontSize: 12, fontWeight: 'bold', marginLeft: 4 },
@@ -214,37 +208,10 @@ const styles = StyleSheet.create({
     description: { fontSize: 15, marginTop: 15, lineHeight: 22, opacity: 0.8 },
     divider: { height: 1, marginVertical: 30 },
     infoCard: { padding: 16, borderRadius: 20 },
-    footer: { 
-        position: 'absolute', 
-        bottom: 0, 
-        width: '100%', 
-        flexDirection: 'row', 
-        padding: 20, 
-        paddingBottom: Platform.OS === 'ios' ? 40 : 25, 
-        borderTopWidth: 1, 
-        alignItems: 'center',
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-    },
-    quantityContainer: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        backgroundColor: 'rgba(0,0,0,0.05)', 
-        borderRadius: 18, 
-        marginRight: 15,
-        padding: 4 
-    },
+    footer: { position: 'absolute', bottom: 0, width: '100%', flexDirection: 'row', padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 25, borderTopWidth: 1, alignItems: 'center', elevation: 10 },
+    quantityContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 18, marginRight: 15, padding: 4 },
     qtyBtn: { width: 42, height: 42, justifyContent: 'center', alignItems: 'center' },
     qtyText: { fontSize: 18, fontWeight: '800', marginHorizontal: 10 },
-    addBtn: { 
-        flex: 1, 
-        height: 58, 
-        borderRadius: 18, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        elevation: 3 
-    },
+    addBtn: { flex: 1, height: 58, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
     addBtnText: { color: '#FFF', fontSize: 17, fontWeight: 'bold' }
 });

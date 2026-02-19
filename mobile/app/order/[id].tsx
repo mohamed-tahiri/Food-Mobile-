@@ -12,19 +12,22 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Package, MapPin, Phone, Star } from 'lucide-react-native';
+
+// Services & Hooks
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { ENDPOINTS } from '@/constants/api';
-import { useAuth } from '@/context/AuthContext';
+import { orderService } from '@/services/order.service';
+
+// Types
 import { Order } from '@/types/order';
 
 export default function OrderDetailScreen() {
     const { id } = useLocalSearchParams();
-    const { token } = useAuth();
     const router = useRouter();
 
     const [order, setOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Thème
     const backgroundColor = useThemeColor({}, 'background');
     const cardBg = useThemeColor({}, 'card');
     const textColor = useThemeColor({}, 'text');
@@ -32,6 +35,9 @@ export default function OrderDetailScreen() {
     const primaryColor = useThemeColor({}, 'primary');
     const borderColor = useThemeColor({}, 'border');
 
+    /**
+     * Gère l'appel téléphonique au livreur
+     */
     const handleCallDriver = () => {
         if (order?.driverInfo?.phone) {
             const url = `tel:${order.driverInfo.phone}`;
@@ -49,22 +55,26 @@ export default function OrderDetailScreen() {
         }
     };
 
+    /**
+     * Chargement des détails via le SERVICE
+     */
     useEffect(() => {
         const fetchOrderDetail = async () => {
             try {
-                const response = await fetch(`${ENDPOINTS.ORDERS}/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const json = await response.json();
-                if (json.success) setOrder(json.data);
+                // Utilisation du service centralisé
+                const res = await orderService.getOrderById(id as string);
+                if (res.success) {
+                    setOrder(res.data);
+                }
             } catch (error) {
-                console.error(error);
+                console.error("Erreur service OrderDetail:", error);
             } finally {
                 setIsLoading(false);
             }
         };
-        if (id && token) fetchOrderDetail();
-    }, [id, token]);
+
+        if (id) fetchOrderDetail();
+    }, [id]);
 
     if (isLoading) return <ActivityIndicator style={{ flex: 1 }} color={primaryColor} />;
     if (!order) return null;
@@ -75,36 +85,45 @@ export default function OrderDetailScreen() {
 
             {/* Header Custom */}
             <View style={styles.header}>
-                <TouchableOpacity style={[styles.backBtn, { backgroundColor: cardBg }]} onPress={() => router.back()}>
+                <TouchableOpacity 
+                    style={[styles.backBtn, { backgroundColor: cardBg }]} 
+                    onPress={() => router.back()}
+                >
                     <ChevronLeft color={textColor} size={24} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: textColor }]}>Commande #{order.orderNumber.split('-').pop()}</Text>
+                <Text style={[styles.headerTitle, { color: textColor }]}>
+                    Commande #{order.orderNumber.split('-').pop()}
+                </Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 
-                {/* Status & Timeline Summary */}
+                {/* Statut Card */}
                 <View style={[styles.statusCard, { backgroundColor: cardBg }]}>
                     <View style={[styles.iconCircle, { backgroundColor: primaryColor + '15' }]}>
                         <Package color={primaryColor} size={32} />
                     </View>
-                    <Text style={[styles.statusText, { color: primaryColor }]}>{order.status.toUpperCase()}</Text>
+                    <Text style={[styles.statusText, { color: primaryColor }]}>
+                        {order.status.toUpperCase()}
+                    </Text>
                     <Text style={[styles.dateText, { color: textMuted }]}>
                         Passée le {new Date(order.createdAt).toLocaleDateString('fr-FR')} à {new Date(order.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                 </View>
 
-                {/* Section Livreur (Si disponible dans ton JSON) */}
+                {/* Section Livreur */}
                 {order.driverInfo && (
                     <View style={[styles.section, { backgroundColor: cardBg }]}>
                         <Text style={[styles.sectionTitle, { color: textMuted }]}>Votre Livreur</Text>
                         <View style={styles.driverRow}>
-                            <Image source={{ uri: order?.driverInfo?.avatar }} style={styles.driverAvatar} />
+                            <Image source={{ uri: order.driverInfo.avatar }} style={styles.driverAvatar} />
                             <View style={{ flex: 1, marginLeft: 12 }}>
                                 <Text style={[styles.driverName, { color: textColor }]}>{order.driverInfo.name}</Text>
                                 <View style={styles.driverMeta}>
                                     <Star size={14} color="#FFB300" fill="#FFB300" />
-                                    <Text style={{ color: textMuted, fontSize: 12 }}> {order.driverInfo.rating} • {order.driverInfo.vehicle}</Text>
+                                    <Text style={{ color: textMuted, fontSize: 12 }}> 
+                                        {order.driverInfo.rating} • {order.driverInfo.vehicle}
+                                    </Text>
                                 </View>
                             </View>
                             <TouchableOpacity 
@@ -118,19 +137,21 @@ export default function OrderDetailScreen() {
                     </View>
                 )}
 
-                {/* Adresse de livraison */}
+                {/* Adresse */}
                 <View style={[styles.section, { backgroundColor: cardBg }]}>
                     <Text style={[styles.sectionTitle, { color: textMuted }]}>Adresse de livraison</Text>
                     <View style={styles.addressRow}>
                         <MapPin size={20} color={primaryColor} />
                         <View style={{ marginLeft: 10 }}>
                             <Text style={[styles.addressLabel, { color: textColor }]}>{order.deliveryAddress.label}</Text>
-                            <Text style={[styles.addressText, { color: textMuted }]}>{order.deliveryAddress.street}, {order.deliveryAddress.city}</Text>
+                            <Text style={[styles.addressText, { color: textMuted }]}>
+                                {order.deliveryAddress.street}, {order.deliveryAddress.city}
+                            </Text>
                         </View>
                     </View>
                 </View>
 
-                {/* Liste des articles */}
+                {/* Panier */}
                 <View style={[styles.section, { backgroundColor: cardBg }]}>
                     <Text style={[styles.sectionTitle, { color: textMuted }]}>Votre Panier</Text>
                     {order.items.map((item, index) => (
@@ -146,9 +167,20 @@ export default function OrderDetailScreen() {
                     
                     <View style={[styles.divider, { backgroundColor: borderColor }]} />
                     
-                    <View style={styles.priceRow}><Text style={{ color: textMuted }}>Sous-total</Text><Text style={{ color: textColor }}>{order.subtotal.toFixed(2)} €</Text></View>
-                    <View style={styles.priceRow}><Text style={{ color: textMuted }}>Frais de livraison</Text><Text style={{ color: textColor }}>{order.deliveryFee.toFixed(2)} €</Text></View>
-                    <View style={[styles.priceRow, { marginTop: 10 }]}><Text style={[styles.totalLabel, { color: textColor }]}>Total</Text><Text style={[styles.totalValue, { color: primaryColor }]}>{order.total.toFixed(2)} €</Text></View>
+                    <View style={styles.priceRow}>
+                        <Text style={{ color: textMuted }}>Sous-total</Text>
+                        <Text style={{ color: textColor }}>{order.subtotal.toFixed(2)} €</Text>
+                    </View>
+                    <View style={styles.priceRow}>
+                        <Text style={{ color: textMuted }}>Frais de livraison</Text>
+                        <Text style={{ color: textColor }}>{order.deliveryFee.toFixed(2)} €</Text>
+                    </View>
+                    <View style={[styles.priceRow, { marginTop: 10 }]}>
+                        <Text style={[styles.totalLabel, { color: textColor }]}>Total</Text>
+                        <Text style={[styles.totalValue, { color: primaryColor }]}>
+                            {order.total.toFixed(2)} €
+                        </Text>
+                    </View>
                 </View>
             </ScrollView>
         </View>

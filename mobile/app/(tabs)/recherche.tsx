@@ -9,11 +9,17 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Search, History, TrendingUp, X } from 'lucide-react-native';
+
+// UI Components
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
-import { Resto } from '@/types/resto';
+import CardCuisineItem from '@/components/ui/card/CardCuisineItem';
+
+// Services & Hooks
+import { restaurantService } from '@/services/restaurant.service';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import CardCuisineItem from '@/components/ui/card/CardCuisineItem'; // Assure-toi que ce composant accepte 'item' de type Category
-import { ENDPOINTS } from '@/constants/api';
+
+// Types
+import { Resto } from '@/types/resto';
 import { Category } from '@/types/category';
 
 export default function SearchScreen() {
@@ -30,31 +36,29 @@ export default function SearchScreen() {
     const primaryColor = useThemeColor({}, 'primary');
     const borderColor = useThemeColor({}, 'border');
 
-    const fetchData = async () => {
+    // Utilisation du SERVICE pour charger les données initiales
+    const loadInitialData = async () => {
         setIsLoading(true);
         try {
             const [resRestos, resCats] = await Promise.all([
-                fetch(ENDPOINTS.RESTAURANTS),
-                fetch(ENDPOINTS.CATEGORIES)
+                restaurantService.getAll(),
+                restaurantService.getCategories()
             ]);
 
-            const jsonRestos = await resRestos.json();
-            const jsonCats = await resCats.json();
-
-            // Adaptation selon si ton API renvoie { data: [] } ou directement []
-            setAllRestos(jsonRestos.data || jsonRestos);
-            setCategories(jsonCats.data || jsonCats);
+            if (resRestos.success) setAllRestos(resRestos.data);
+            if (resCats.success) setCategories(resCats.data);
         } catch (error) {
-            console.error("Erreur Fetch API Search :", error);
+            console.error("Erreur Service Search :", error);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchData();
+        loadInitialData();
     }, []);
 
+    // Logique de filtrage + Suggestions (Mohamed : toujours 3 résultats minimum)
     useEffect(() => {
         const query = searchText.trim().toLowerCase();
         
@@ -65,7 +69,7 @@ export default function SearchScreen() {
                     resto.cuisine?.some(c => c.toLowerCase().includes(query))
             );
 
-            // Lissage (Objectif Mohamed : Toujours au moins 3 restos)
+            // Algorithme de suggestion si peu de résultats
             if (matches.length < 3) {
                 const suggestions = allRestos
                     .filter(r => !matches.find(m => m.id === r.id))
@@ -85,6 +89,7 @@ export default function SearchScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor }]}>
+            {/* Header & Search Bar */}
             <View style={[styles.header, { backgroundColor: headerColor }]}>
                 <Text style={[styles.title, { color: textColor }]}>Rechercher</Text>
                 <View style={styles.searchContainer}>
@@ -133,7 +138,7 @@ export default function SearchScreen() {
                     </View>
                 ) : (
                     <>
-                        {/* Section Historique / Récents */}
+                        {/* Section Historique */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Text style={[styles.sectionTitle, { color: textColor }]}>Récents</Text>
@@ -155,7 +160,7 @@ export default function SearchScreen() {
                             </View>
                         </View>
 
-                        {/* Section Parcourir (API Dynamique) */}
+                        {/* Section Parcourir via Categories Service */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Text style={[styles.sectionTitle, { color: textColor }]}>Parcourir par cuisine</Text>
@@ -166,7 +171,6 @@ export default function SearchScreen() {
                                     <CardCuisineItem
                                         key={cat.id}
                                         item={cat}
-                                        // On utilise le nom de la catégorie pour déclencher la recherche
                                         setSearchText={setSearchText} 
                                     />
                                 ))}

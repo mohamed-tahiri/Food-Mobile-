@@ -1,14 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert, ActivityIndicator } from 'react-native';
+import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, CreditCard, Trash2 } from 'lucide-react-native';
 import { useCart } from '@/context/CartContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { orderService } from '@/services/order.service';
 import CardCartItem from '@/components/ui/card/CardCartItem';
 
 export default function CartScreen() {
+    const { id } = useLocalSearchParams();
     const router = useRouter();
-    const { cart, addToCart, removeFromCart, totalPrice, deleteFromCart, clearCart } = useCart();
+    const { cart, restaurantId, addToCart, removeFromCart, totalPrice, deleteFromCart, clearCart } = useCart();
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const backgroundColor = useThemeColor({}, 'background');
     const cardBg = useThemeColor({}, 'card');
@@ -32,15 +35,42 @@ export default function CartScreen() {
         );
     };
 
-    const handlePayment = () => {
-        Alert.alert(
-            "Paiement réussi",
-            "Merci pour votre commande ! Elle arrivera d'ici 20 minutes.",
-            [{ text: "Super !", onPress: () => {
-                clearCart();
-                router.replace('/(tabs)');
-            }}]
-        );
+    const handlePayment = async () => {
+        if (!id) {
+            console.error("ERREUR: restaurantId est vide !");
+            return Alert.alert("Erreur", "Le restaurant n'est pas identifié.");
+        }
+
+        setIsProcessing(true);
+        try {
+            // Création de la commande réelle sur ton serveur
+            const orderData = {
+                restaurantId: String(id),
+                items: cart.map(item => ({ menuItemId: item.id, quantity: item.quantity })),
+                deliveryAddress: { label: "Maison", street: "123 Rue de l'Estiam", city: "Paris" },
+                paymentMethod: "card"
+            };
+
+            const res = await orderService.createOrder(orderData);
+
+            if (res.success) {
+                Alert.alert(
+                    "Paiement réussi",
+                    "Merci pour votre commande Mohamed ! Elle arrivera d'ici 20 minutes.",
+                    [{ text: "Super !", onPress: () => {
+                        clearCart();
+                        router.replace('/(tabs)/commandes');
+                    }}]
+                );
+            } else {
+                Alert.alert("Échec", "Impossible de valider la commande.");
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Erreur", "Connexion au serveur impossible.");
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     if (cart.length === 0) {
@@ -95,7 +125,7 @@ export default function CartScreen() {
                         textColor={textColor}
                         primaryColor={primaryColor}
                         borderColor={borderColor}
-                        addToCart={addToCart}
+                        addToCart={(i) => addToCart(i, restaurantId!)}
                         removeFromCart={removeFromCart}
                         deleteFromCart={deleteFromCart}
                     />
@@ -122,9 +152,16 @@ export default function CartScreen() {
                 <TouchableOpacity 
                     style={[styles.checkoutBtn, { backgroundColor: primaryColor }]}
                     onPress={handlePayment}
+                    disabled={isProcessing}
                 >
-                    <CreditCard color="#FFF" size={20} style={{ marginRight: 10 }} />
-                    <Text style={styles.checkoutText}>Payer {totalPrice.toFixed(2)} €</Text>
+                    {isProcessing ? (
+                        <ActivityIndicator color="#FFF" />
+                    ) : (
+                        <>
+                            <CreditCard color="#FFF" size={20} style={{ marginRight: 10 }} />
+                            <Text style={styles.checkoutText}>Payer {totalPrice.toFixed(2)} €</Text>
+                        </>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

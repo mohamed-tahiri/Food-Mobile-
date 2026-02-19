@@ -1,63 +1,53 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import CardCommand from '@/components/ui/card/CardCommand';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { ENDPOINTS } from '@/constants/api';
+import { useAuth } from '@/context/AuthContext';
+import { orderService } from '@/services/order.service'; // Import du service
 import { Order } from '@/types/order';
-import { useAuth } from '@/context/AuthContext'; // Import du hook d'auth
 
 export default function OrdersScreen() {
-    const { token } = useAuth(); // Récupération du token dynamique
+    const { token } = useAuth(); 
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     
+    // Theme colors
     const backgroundColor = useThemeColor({}, 'background');
     const textColor = useThemeColor({}, 'text');
     const primaryColor = useThemeColor({}, 'primary');
 
-    const fetchOrders = async () => {
-        // Si pas de token, on ne tente même pas l'appel
+    // Utilisation du SERVICE pour charger les commandes
+    const loadOrders = async () => {
         if (!token) return;
 
         try {
-            const response = await fetch(ENDPOINTS.ORDERS, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const res = await orderService.getOrders(); // Plus besoin de passer le token ici car géré par l'intercepteur ou le service centralisé
 
-            const json = await response.json();
-            
-            if (json.success) {
-                // On trie par date décroissante (plus récent en haut)
-                const sortedOrders = (json.data || []).sort((a: Order, b: Order) => 
+            if (res.success) {
+                // Tri par date (plus récent en haut)
+                const sortedOrders = (res.data || []).sort((a: Order, b: Order) => 
                     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                 );
                 setOrders(sortedOrders);
             } else {
-                console.log("Erreur API :", json.message);
+                console.error("Erreur API :", res);
             }
         } catch (error) {
-            console.error("Erreur Fetch Orders :", error);
+            console.error("Erreur service orders :", error);
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
 
-    // Refresh manuel (Pull to refresh)
-    const onRefresh = () => {
+    const onRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchOrders();
-    };
+        loadOrders();
+    }, [token]);
 
     useEffect(() => {
-        if (token) {
-            fetchOrders();
-        }
+        loadOrders();
     }, [token]);
 
     return (

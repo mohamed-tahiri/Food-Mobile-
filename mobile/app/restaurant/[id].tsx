@@ -14,13 +14,18 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Star, Clock, Heart, Share2, Phone, Navigation } from 'lucide-react-native';
+
+// UI Components
 import CardMenuItem from '@/components/ui/card/CardMenuItem';
+
+// Hooks & Services
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCart } from '@/context/CartContext';
 import { useFavorites } from '@/context/FavoriteContext';
-import { ENDPOINTS } from '@/constants/api';
-import { ApiResponse, Resto } from '@/types/resto';
-import { MenuCategory } from '@/types/menuItem';
+import { restaurantService } from '@/services/restaurant.service';
+
+// Types
+import { Resto } from '@/types/resto';
 
 const { width } = Dimensions.get('window');
 
@@ -28,10 +33,10 @@ export default function RestaurantDetail() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     
-    // État typé directement sur l'objet métier Resto
     const [restaurant, setRestaurant] = useState<Resto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Couleurs Thématiques
     const backgroundColor = useThemeColor({}, 'background');
     const textColor = useThemeColor({}, 'text');
     const textMuted = useThemeColor({}, 'textMuted');
@@ -41,30 +46,31 @@ export default function RestaurantDetail() {
     const { totalItems, totalPrice } = useCart();
     const { toggleFavorite, isFavorite } = useFavorites();
 
+    // UTILISATION DU SERVICE POUR CHARGER LES DÉTAILS ET LE MENU
     useEffect(() => {
-        const fetchDetails = async () => {
+        const fetchAllData = async () => {
             setIsLoading(true);
             try {
-                const resDetails = await fetch(ENDPOINTS.RESTAURANT_DETAILS(id as string));
-                const jsonDetails: ApiResponse<Resto> = await resDetails.json();
+                // On récupère les détails et le menu via le service
+                const [resDetails, resMenu] = await Promise.all([
+                    restaurantService.getDetails(id as string),
+                    restaurantService.getMenu(id as string)
+                ]);
 
-                const resMenu = await fetch(ENDPOINTS.RESTAURANT_MENU(id as string));
-                const jsonMenu: ApiResponse<MenuCategory[]> = await resMenu.json();
-
-                if (jsonDetails.success && jsonMenu.success) {
+                if (resDetails.success && resMenu.success) {
                     setRestaurant({
-                        ...jsonDetails.data,
-                        menuCategories: jsonMenu.data
+                        ...resDetails.data,
+                        menuCategories: resMenu.data
                     });
                 }
             } catch (error) {
-                console.error("Erreur de liaison API:", error);
+                console.error("Erreur de liaison via restaurantService:", error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        if (id) fetchDetails();
+        if (id) fetchAllData();
     }, [id]);
 
     const handleCall = () => {
@@ -81,7 +87,7 @@ export default function RestaurantDetail() {
         }
     };
 
-    const active = isFavorite(String(id));
+    const isFav = isFavorite(String(id));
 
     const onShare = async () => {
         try {
@@ -89,7 +95,7 @@ export default function RestaurantDetail() {
                 message: `Regarde ce restaurant sur Foodie App : ${restaurant?.name || 'Restaurant'} !`,
             });
         } catch (error) {
-            console.log(error);
+            console.error(error);
         }
     };
 
@@ -105,6 +111,7 @@ export default function RestaurantDetail() {
         <View style={[styles.container, { backgroundColor }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
+            {/* Header Image avec Overlay */}
             <View style={styles.imageHeader}>
                 <Image
                     source={{ uri: restaurant?.image }}
@@ -124,8 +131,8 @@ export default function RestaurantDetail() {
                     <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavorite(String(id))}>
                         <Heart 
                             size={20} 
-                            color={active ? "#FF3B30" : "#000"} 
-                            fill={active ? "#FF3B30" : "transparent"}
+                            color={isFav ? "#FF3B30" : "#000"} 
+                            fill={isFav ? "#FF3B30" : "transparent"}
                         />
                     </TouchableOpacity>
                 </View>
@@ -153,6 +160,7 @@ export default function RestaurantDetail() {
                         </View>
                     </View>
 
+                    {/* Actions de contact rapides */}
                     <View style={[styles.actionRow, { borderTopColor: borderColor, borderBottomColor: borderColor }]}>
                         <TouchableOpacity style={styles.contactAction} onPress={handleCall}>
                             <View style={[styles.actionIconCircle, { backgroundColor: primaryColor + '15' }]}>
@@ -170,7 +178,7 @@ export default function RestaurantDetail() {
                     </View>
                 </View>
 
-                {/* DOUBLE BOUCLE POUR LES MENUS PAR CATÉGORIE */}
+                {/* Liste des Menus par Catégorie */}
                 {restaurant?.menuCategories?.map((category) => (
                     <View key={category.id} style={styles.menuSection}>
                         <Text style={[styles.sectionTitle, { color: textColor }]}>{category.name}</Text>
@@ -181,13 +189,18 @@ export default function RestaurantDetail() {
                 ))}
             </ScrollView>
 
+            {/* Footer flottant pour le Panier */}
             {totalItems > 0 && (
                 <View style={styles.cartFooter}>
                     <TouchableOpacity
                         style={[styles.cartBtn, { backgroundColor: primaryColor }]}
                         activeOpacity={0.9}
-                        onPress={() => router.push('/cart/cart')} 
-                    >
+                        onPress={() =>
+                        router.push({
+                            pathname: '/cart/[id]',
+                            params: { id: String(restaurant?.id) },
+                        })
+                    }>
                         <View style={styles.cartBadge}>
                             <Text style={styles.cartBadgeText}>{totalItems}</Text>
                         </View>
