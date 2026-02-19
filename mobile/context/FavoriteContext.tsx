@@ -1,37 +1,55 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Resto } from '@/types/resto';
-import { restaurants } from '@/data/dataMocket';
+import { favoriteService } from '@/services/favorite.service';
+import { useAuth } from '@/context/AuthContext';
 
 interface FavoriteContextType {
     favorites: Resto[];
-    toggleFavorite: (restoId: string) => void;
+    toggleFavorite: (restoId: string) => Promise<void>;
     isFavorite: (restoId: string) => boolean;
+    isLoading: boolean;
 }
 
 const FavoriteContext = createContext<FavoriteContextType | undefined>(undefined);
 
 export function FavoriteProvider({ children }: { children: React.ReactNode }) {
     const [favorites, setFavorites] = useState<Resto[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { token } = useAuth();
 
-    const toggleFavorite = (restoId: string) => {
-        setFavorites((prev) => {
-            const exists = prev.find((item) => item.id === restoId);
-            
-            if (exists) {
-                // S'il existe, on le retire simplement
-                return prev.filter((item) => item.id !== restoId);
+
+
+    useEffect(() => {
+        const loadFavorites = async () => {
+            if (token) {
+                const res = await favoriteService.getFavorites();
+                
+                if (res.success) setFavorites(res.data);
+            } else {
+                setFavorites([]);
             }
-            
-            // S'il n'existe pas, on cherche l'objet complet dans nos données
-            const restoData = restaurants.find((r) => r.id === restoId);
-            
-            if (restoData) {
-                // On l'ajoute avec ses infos complètes
-                return [...prev, { ...restoData, isFavorite: true }];
+            setIsLoading(false);
+        };
+        loadFavorites();
+    }, [token]);
+
+    const toggleFavorite = async (restoId: string) => {
+        const alreadyFavorite = isFavorite(restoId);
+
+        try {
+            if (alreadyFavorite) {
+                setFavorites(prev => prev.filter(item => item.id !== restoId));
+                await favoriteService.removeFavorite(restoId);
+            } else {
+                const res = await favoriteService.addFavorite(restoId);
+                if (res.success) {
+                    const updatedList = await favoriteService.getFavorites();
+                    if (updatedList.success) setFavorites(updatedList.data);
+                }
             }
-            
-            return prev; // Au cas où l'ID ne correspond à rien
-        });
+        } catch (error) {
+            console.error("Erreur toggle favorite:", error);
+        }
     };
 
     const isFavorite = (restoId: string) => {
@@ -39,7 +57,7 @@ export function FavoriteProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <FavoriteContext.Provider value={{ favorites, toggleFavorite, isFavorite }}>
+        <FavoriteContext.Provider value={{ favorites, toggleFavorite, isFavorite, isLoading }}>
             {children}
         </FavoriteContext.Provider>
     );

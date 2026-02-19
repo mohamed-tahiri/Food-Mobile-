@@ -1,17 +1,19 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { MenuItem } from '@/types/menuItem';
+import { orderService } from '@/services/order.service';
 
-// On définit la structure d'un élément du panier
 export interface CartItem extends MenuItem {
     quantity: number;
 }
 
 interface CartContextType {
     cart: CartItem[];
-    addToCart: (item: MenuItem) => void;
+    restaurantId: string | null;
+    addToCart: (item: MenuItem, restoId: string) => void;
     removeFromCart: (itemId: string) => void;
     deleteFromCart: (itemId: string) => void;
     clearCart: () => void;
+    validateCart: () => Promise<any>;
     totalPrice: number;
     totalItems: number;
 }
@@ -20,10 +22,25 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
     const [cart, setCart] = useState<CartItem[]>([]);
+    const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
-    // Ajouter au panier
-    const addToCart = (item: MenuItem) => {
+    // Calculs dérivés (Memoized pour la performance)
+    const totalPrice = useMemo(() => 
+        cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    , [cart]);
+
+    const totalItems = useMemo(() => 
+        cart.reduce((sum, item) => sum + item.quantity, 0)
+    , [cart]);
+
+    const addToCart = (item: MenuItem, restoId: string) => {
         setCart((prevCart) => {
+            if (restaurantId && restaurantId !== restoId) {
+                // Optionnel : Alert.alert("Panier vidé", "Vous ne pouvez commander que dans un resto à la fois")
+                setRestaurantId(restoId);
+                return [{ ...item, quantity: 1 }];
+            }
+            setRestaurantId(restoId);
             const existingItem = prevCart.find((i) => i.id === item.id);
             if (existingItem) {
                 return prevCart.map((i) =>
@@ -34,50 +51,51 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         });
     };
 
-    // Supprimer/Diminuer
     const removeFromCart = (itemId: string) => {
         setCart((prevCart) => {
             const existingItem = prevCart.find((i) => i.id === itemId);
             if (existingItem?.quantity === 1) {
-                return prevCart.filter((i) => i.id !== itemId);
+                const newCart = prevCart.filter((i) => i.id !== itemId);
+                if (newCart.length === 0) setRestaurantId(null);
+                return newCart;
             }
             return prevCart.map((i) =>
                 i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i
             );
         });
     };
-    
+
     const deleteFromCart = (itemId: string) => {
-        setCart((prevCart) => prevCart.filter((i) => i.id !== itemId));
+        const newCart = cart.filter((i) => i.id !== itemId);
+        setCart(newCart);
+        if (newCart.length === 0) setRestaurantId(null);
     };
 
-    const clearCart = () => setCart([]);
+    const clearCart = () => {
+        setCart([]);
+        setRestaurantId(null);
+    };
 
-    const totalPrice = useMemo(() => 
-        cart.reduce((sum, item) => {
-            const priceValue = typeof item.price === 'string' 
-                ? parseFloat(item.price) 
-                : item.price; 
-                
-            return sum + (priceValue * item.quantity);
-        }, 0), 
-    [cart]);
-
-    const totalItems = useMemo(() => 
-        cart.reduce((sum, item) => sum + item.quantity, 0), 
-    [cart]);
+    const validateCart = async () => {
+        if (!restaurantId || cart.length === 0) return null;
+        const items = cart.map(item => ({ menuItemId: item.id, quantity: item.quantity }));
+        return await orderService.validateCart(restaurantId, items);
+    };
 
     return (
         <CartContext.Provider 
             value={{ 
                 cart, 
+                restaurantId, 
                 addToCart, 
                 removeFromCart, 
+                deleteFromCart, 
                 clearCart, 
-                deleteFromCart,
+                validateCart, 
                 totalPrice, 
                 totalItems 
-            }}>
+            }}
+        >
             {children}
         </CartContext.Provider>
     );
