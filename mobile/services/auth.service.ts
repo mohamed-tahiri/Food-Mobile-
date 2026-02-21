@@ -21,4 +21,6 @@ export const authService = {
 
   updateProfile: (data: any) => 
     apiRequest('/users/profile', { method: 'PATCH', body: JSON.stringify(data) }),
+
+  
 };
