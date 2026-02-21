@@ -17,7 +17,7 @@ export interface Order {
     restaurantName: string;
     restaurantImage: string;
     items: OrderItem[];
-    status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'delivering' | 'delivered';
+    status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'delivering' | 'delivered' | 'cancelled';
     subtotal: number;
     deliveryFee: number;
     serviceFee: number;
