@@ -8,7 +8,7 @@ export const favoriteService = {
      * Récupère la liste des restaurants favoris de l'utilisateur
      */
     getFavorites: async (): Promise<{ success: boolean; data: Resto[] }> => {
-        return apiRequest('/user/favorites');
+        return apiRequest('/favorites');
     },
 
     /**

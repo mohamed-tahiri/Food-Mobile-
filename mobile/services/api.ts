@@ -8,11 +8,14 @@ const getHeaders = async (isUpload = false) => {
         'Accept': 'application/json',
         ...(isUpload ? {} : { 'Content-Type': 'application/json' }),
     };
+
     if (token) headers['Authorization'] = `Bearer ${token}`;
     return headers;
 };
 
 export const apiRequest = async (endpoint: string, options: any = {}) => {
+
+
     const headers = await getHeaders(options.body instanceof FormData);
     const response = await fetch(`${API_URL}${endpoint}`, {
         ...options,

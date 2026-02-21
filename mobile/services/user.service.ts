@@ -9,7 +9,7 @@ export const userService = {
     apiRequest('/orders', { method: 'POST', body: JSON.stringify(orderData) }),
     
   toggleFavorite: (id: string) => 
-    apiRequest(`/user/favorites/${id}`, { method: 'POST' }),
+    apiRequest(`/users/favorites/${id}`, { method: 'POST' }),
     
-  getFavorites: () => apiRequest('/user/favorites'),
+  getFavorites: () => apiRequest('/users/favorites'),
 };

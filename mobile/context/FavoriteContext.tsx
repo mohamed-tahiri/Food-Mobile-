@@ -17,8 +17,6 @@ export function FavoriteProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const { token } = useAuth();
 
-
-
     useEffect(() => {
         const loadFavorites = async () => {
             if (token) {
