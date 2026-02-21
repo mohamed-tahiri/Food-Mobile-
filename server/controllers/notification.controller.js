@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import { loadJSON, saveJSON } from "../utils/database.util.js";
 
 let pushTokens = loadJSON("push-tokens.json") || {};
@@ -23,22 +24,22 @@ export const registerPushTokenNotification = (req, res) => {
 export const getNotifications = (req, res) => {
     const notifications = [
         {
-        id: uuidv4(),
-        type: "promotion",
-        title: "🎉 -20% chez Pizza Napoli !",
-        body: "Profitez de 20% de réduction sur votre prochaine commande",
-        data: { restaurantId: "rest-002" },
-        isRead: false,
-        createdAt: new Date(Date.now() - 3600000).toISOString()
+            id: uuidv4(),
+            type: "promotion",
+            title: "🎉 -20% chez Pizza Napoli !",
+            body: "Profitez de 20% de réduction sur votre prochaine commande",
+            data: { restaurantId: "rest-002" },
+            isRead: false,
+            createdAt: new Date(Date.now() - 3600000).toISOString()
         },
         {
-        id: uuidv4(),
-        type: "new_restaurant",
-        title: "🆕 Nouveau restaurant !",
-        body: "Découvrez Green Bowl, votre nouvelle adresse healthy",
-        data: { restaurantId: "rest-005" },
-        isRead: true,
-        createdAt: new Date(Date.now() - 86400000).toISOString()
+            id: uuidv4(),
+            type: "new_restaurant",
+            title: "🆕 Nouveau restaurant !",
+            body: "Découvrez Green Bowl, votre nouvelle adresse healthy",
+            data: { restaurantId: "rest-005" },
+            isRead: true,
+            createdAt: new Date(Date.now() - 86400000).toISOString()
         }
     ];
     
