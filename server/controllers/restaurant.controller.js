@@ -197,5 +197,8 @@ export const getRestaurantDish = (req, res) => {
 
 export const getRestaurantReviews = (req, res) => {
   const restaurantReviews = reviews.filter(r => r.restaurantId === req.params.id);
+
+  console.log(`Récupération des avis pour le restaurant ${req.params.id} - ${restaurantReviews.length} avis trouvés`);
+
   res.json({ success: true, data: restaurantReviews });
 };

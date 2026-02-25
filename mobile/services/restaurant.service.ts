@@ -12,4 +12,16 @@ export const restaurantService = {
   getCategories: () => apiRequest('/categories'),
   
   search: (query: string) => apiRequest(`/restaurants/search?q=${query}`),
+
+  getReviews: async (id: string) => {
+    return await apiRequest(`/restaurants/${id}/reviews`, { method: 'GET' });
+  },
+
+  createReview: async (formData: FormData) => {
+    return await apiRequest('/reviews', {
+      method: 'POST',
+      body: formData,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  }
 };
