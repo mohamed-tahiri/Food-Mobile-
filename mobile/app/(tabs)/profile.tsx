@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
     View, 
     Text, 
@@ -18,51 +18,23 @@ import {
     Moon, 
     Sun, 
     Camera,
+    MapPin,
+    CreditCard,
+    Star,
+    TrendingUp,
     type LucideIcon 
 } from 'lucide-react-native';
+
+// Services & Hooks
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { authService } from '@/services/auth.service';
-
-// Composant réutilisable pour les options de menu
-interface ProfileOptionProps {
-    Icon: LucideIcon;
-    title: string;
-    subtitle?: string;
-    color?: string;
-    isLast?: boolean;
-    onPress?: () => void;
-}
-
-const ProfileOption = ({ Icon, title, subtitle, color = '#333', isLast, onPress }: ProfileOptionProps) => {
-    const textColor = useThemeColor({}, 'text');
-    const textMuted = useThemeColor({}, 'textMuted');
-    const borderColor = useThemeColor({}, 'border');
-
-    return (
-        <TouchableOpacity 
-            style={[styles.option, !isLast && { borderBottomWidth: 1, borderBottomColor: borderColor }]} 
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-            <View style={styles.optionLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
-                    <Icon size={20} color={color} />
-                </View>
-                <View style={styles.textContainer}>
-                    <Text style={[styles.optionTitle, { color: color === '#FF3B30' ? color : textColor }]}>
-                        {title}
-                    </Text>
-                    {subtitle && <Text style={[styles.optionSubtitle, { color: textMuted }]}>{subtitle}</Text>}
-                </View>
-            </View>
-            <ChevronRight size={18} color={textMuted} />
-        </TouchableOpacity>
-    );
-};
+import { orderService } from '@/services/order.service';
+import { StatCard } from '@/components/ui/profile/StatCard';
+import { ProfileOption } from '@/components/ui/profile/ProfileOption';
 
 export default function ProfileScreen() {
     const router = useRouter();
@@ -70,6 +42,8 @@ export default function ProfileScreen() {
     const { signOut, user, signIn, token } = useAuth();
     
     const [isUploading, setIsUploading] = useState(false);
+    const [orderCount, setOrderCount] = useState<number>(0);
+    const [isStatsLoading, setIsStatsLoading] = useState(true);
 
     const backgroundColor = useThemeColor({}, 'background');
     const headerColor = useThemeColor({}, 'tabBar');
@@ -77,11 +51,27 @@ export default function ProfileScreen() {
     const textMuted = useThemeColor({}, 'textMuted');
     const cardColor = useThemeColor({}, 'card');
 
-    // LOGIQUE DE CHANGEMENT D'IMAGE
+    const fetchStats = async () => {
+        try {
+            const res = await orderService.getOrders();
+            if (res.success) {
+                setOrderCount(res.data.length);
+            }
+        } catch (error) {
+            console.error("Erreur stats commandes:", error);
+        } finally {
+            setIsStatsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
     const handlePickImage = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Permission requise', 'Mohamed, nous avons besoin d\'accès à ta galerie pour changer ta photo !');
+            Alert.alert('Permission requise', 'Accès à la galerie nécessaire pour changer la photo.');
             return;
         }
 
@@ -105,30 +95,25 @@ export default function ProfileScreen() {
             const match = /\.(\w+)$/.exec(fileName);
             const type = match ? `image/${match[1]}` : `image/jpeg`;
 
-            // Formatage du fichier pour l'envoi multipart
             formData.append('file', {
                 uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
                 name: fileName,
                 type: type,
             } as any);
 
-            // 1. Appel API pour uploader le fichier
             const uploadRes = await authService.uploadAvatar(formData);
             
             if (uploadRes.success) {
-                // 2. Mise à jour de l'URL photo dans le profil de Mohamed
                 const photoUrl = uploadRes.data.url;
                 const updateRes = await authService.updateProfile({ photo: photoUrl });
 
                 if (updateRes.success) {
-                    // 3. Sync locale avec le contexte Auth
                     await signIn(token!, updateRes.data);
-                    Alert.alert('Succès', 'Ta photo de profil a été mise à jour 📸');
+                    Alert.alert('Succès', 'Photo de profil mise à jour !');
                 }
             }
         } catch (error) {
-            console.error("Erreur upload avatar:", error);
-            Alert.alert('Erreur', "Impossible de mettre à jour l'image. Vérifie ta connexion.");
+            Alert.alert('Erreur', "Impossible de mettre à jour l'image.");
         } finally {
             setIsUploading(false);
         }
@@ -136,7 +121,7 @@ export default function ProfileScreen() {
 
     return (
         <ScrollView style={[styles.container, { backgroundColor }]} showsVerticalScrollIndicator={false}>
-            {/* HEADER AVEC AVATAR DYNAMIQUE */}
+            {/* Header avec Avatar */}
             <View style={[styles.header, { backgroundColor: headerColor }]}>
                 <TouchableOpacity 
                     style={styles.avatarWrapper} 
@@ -148,7 +133,7 @@ export default function ProfileScreen() {
                             <Image source={{ uri: user.photo }} style={styles.imageAvatar} />
                         ) : (
                             <Text style={styles.avatarText}>
-                                {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'MT'}
+                                {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'MT'}
                             </Text>
                         )}
                     </View>
@@ -162,52 +147,93 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
 
                 <Text style={[styles.userName, { color: textColor }]}>{user?.name || "Mohamed Tahiri"}</Text>
-                <Text style={[styles.userEmail, { color: textMuted }]}>{user?.email || "chargement..."}</Text>
+                <Text style={[styles.userEmail, { color: textMuted }]}>{user?.email || "mohamed.tahiri@estiam.fr"}</Text>
             </View>
 
-            {/* SECTIONS DE MENU */}
+            {/* Statistiques Cards */}
+            <View style={styles.statsRow}>
+                <StatCard
+                    title="Commandes" 
+                    value={isStatsLoading ? "..." : orderCount.toString()}
+                    Icon={ShoppingBag} 
+                    color="#FF6B35" 
+                />
+                <StatCard title="Avis" value="5" Icon={Star} color="#FFB300" />
+                <StatCard title="Points" value="450" Icon={TrendingUp} color="#4CAF50" />
+            </View>
+
+            {/* Section : Informations */}
             <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: textMuted }]}>Préférences</Text>
+                <Text style={[styles.sectionTitle, { color: textMuted }]}>Informations personnelles</Text>
                 <View style={[styles.card, { backgroundColor: cardColor }]}>
+                    <ProfileOption
+                        Icon={MapPin} 
+                        title="Mes adresses" 
+                        subtitle="Noisy-le-Grand, Buc..." 
+                        color="#4A90E2"
+                        onPress={() => router.push('/address/manage')} 
+                    />
                     <ProfileOption 
-                        Icon={isDark ? Sun : Moon} 
-                        title={isDark ? 'Mode Clair' : 'Mode Sombre'} 
-                        color={isDark ? '#FFB300' : '#4A90E2'} 
-                        isLast={true} 
-                        onPress={toggleTheme} 
+                        Icon={CreditCard} 
+                        title="Moyens de paiement" 
+                        subtitle="Visa, Mastercard..." 
+                        color="#9C27B0"
+                        isLast={true}
+                        onPress={() => router.push('/payment/manage')} // Nouvelle route
                     />
                 </View>
             </View>
 
+            {/* Section : Activité */}
             <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: textMuted }]}>Activité</Text>
                 <View style={[styles.card, { backgroundColor: cardColor }]}>
                     <ProfileOption 
                         Icon={ShoppingBag} 
-                        title="Mes commandes" 
+                        title="Historique des commandes" 
                         color="#FF6B35"
                         onPress={() => router.push('/(tabs)/commandes')}
-                     />
-                    <ProfileOption Icon={Share2} title="Parrainer" color="#4CAF50" isLast={true} />
+                    />
+                    <ProfileOption 
+                        Icon={Star} 
+                        title="Mes avis publiés" 
+                        color="#FFB300"
+                        isLast={true}
+                        onPress={() => Alert.alert("Avis", "Affichage de vos avis en cours de développement")} 
+                    />
                 </View>
             </View>
 
-            <View style={[styles.section, { marginBottom: 30 }]}>
+            {/* Section : Paramètres & Déconnexion */}
+            <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: textMuted }]}>Paramètres</Text>
                 <View style={[styles.card, { backgroundColor: cardColor }]}>
+                    <ProfileOption 
+                        Icon={isDark ? Sun : Moon} 
+                        title={isDark ? 'Mode Clair' : 'Mode Sombre'} 
+                        color={isDark ? '#FFB300' : '#4A90E2'} 
+                        onPress={toggleTheme} 
+                    />
+                    <ProfileOption 
+                        Icon={Share2} 
+                        title="Inviter des amis" 
+                        color="#4CAF50" 
+                    />
                     <ProfileOption 
                         Icon={LogOut} 
                         title="Déconnexion" 
                         color="#FF3B30" 
-                        onPress={() => Alert.alert('Déconnexion', 'Voulez-vous partir ?', [
-                            { text: 'Non', style: 'cancel' },
-                            { text: 'Oui', style: 'destructive', onPress: signOut }
+                        onPress={() => Alert.alert('Déconnexion', 'Voulez-vous vous déconnecter ?', [
+                            { text: 'Annuler', style: 'cancel' },
+                            { text: 'Déconnexion', style: 'destructive', onPress: signOut }
                         ])} 
                         isLast={true} 
                     />
                 </View>
             </View>
 
-            <Text style={styles.versionText}>Foodie App v1.0.2 - Mohamed Tahiri</Text>
+            <Text style={styles.versionText}>Foodie App v1.1.0 - Mohamed Tahiri</Text>
+            <View style={{ height: 40 }} />
         </ScrollView>
     );
 }
@@ -217,51 +243,75 @@ const styles = StyleSheet.create({
     header: { 
         alignItems: 'center', 
         paddingTop: 60, 
-        paddingBottom: 30, 
-        borderBottomLeftRadius: 30, 
-        borderBottomRightRadius: 30,
-        elevation: 2,
+        paddingBottom: 40, 
+        borderBottomLeftRadius: 35, 
+        borderBottomRightRadius: 35,
+        elevation: 8,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12
     },
     avatarWrapper: { position: 'relative', marginBottom: 15 },
     avatar: { 
-        width: 100, 
-        height: 100, 
-        borderRadius: 50, 
+        width: 110, 
+        height: 110, 
+        borderRadius: 55, 
         justifyContent: 'center', 
         alignItems: 'center', 
         overflow: 'hidden',
-        borderWidth: 3,
+        borderWidth: 4,
         borderColor: '#FFF'
     },
     imageAvatar: { width: '100%', height: '100%' },
-    avatarText: { color: '#FFF', fontSize: 36, fontWeight: 'bold' },
+    avatarText: { color: '#FFF', fontSize: 38, fontWeight: '900' },
     cameraBadge: {
         position: 'absolute',
-        bottom: 0,
-        right: 0,
+        bottom: 5,
+        right: 5,
         backgroundColor: '#333',
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
+        borderWidth: 3,
         borderColor: '#FFF'
     },
-    userName: { fontSize: 24, fontWeight: 'bold' },
-    userEmail: { fontSize: 14, marginTop: 4, opacity: 0.8 },
-    section: { paddingHorizontal: 20, marginTop: 25 },
-    sectionTitle: { fontSize: 12, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
-    card: { borderRadius: 24, overflow: 'hidden' },
-    option: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 },
+    userName: { fontSize: 24, fontWeight: '900', marginTop: 10 },
+    userEmail: { fontSize: 14, marginTop: 4, fontWeight: '500' },
+    
+    // Stats Styles
+    statsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        marginTop: -30,
+    },
+    statCard: {
+        width: '30%',
+        paddingVertical: 18,
+        borderRadius: 24,
+        alignItems: 'center',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8
+    },
+    statIconBadge: { padding: 8, borderRadius: 12, marginBottom: 8 },
+    statValue: { fontSize: 18, fontWeight: '900' },
+    statLabel: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginTop: 2, letterSpacing: 0.5 },
+
+    section: { paddingHorizontal: 20, marginTop: 30 },
+    sectionTitle: { fontSize: 13, fontWeight: '900', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1.2, marginLeft: 5 },
+    card: { borderRadius: 28, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
+    
+    option: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
     optionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    iconContainer: { padding: 10, borderRadius: 14, marginRight: 16 },
+    iconContainer: { padding: 10, borderRadius: 15, marginRight: 18 },
     textContainer: { flex: 1 },
     optionTitle: { fontSize: 16, fontWeight: '700' },
-    optionSubtitle: { fontSize: 12, marginTop: 2 },
-    versionText: { textAlign: 'center', fontSize: 11, color: '#999', marginVertical: 20 }
+    optionSubtitle: { fontSize: 12, marginTop: 3, fontWeight: '500' },
+    versionText: { textAlign: 'center', fontSize: 12, color: '#999', marginTop: 40, fontWeight: '600' }
 });
