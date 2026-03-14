@@ -2,13 +2,13 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React from 'react';
 import { OpaqueColorValue, StyleProp, TextStyle } from 'react-native';
 
-// 1. On définit d'abord le mapping
 const MAPPING = {
     'house.fill': 'home',
-    magnifyingglass: 'search',
+    'magnifyingglass': 'search',
     'bag.fill': 'shopping-bag',
     'heart.fill': 'favorite',
     'person.fill': 'person',
+    'bell.fill': 'notifications', 
     'chevron.right': 'chevron-right',
 } as const;
 

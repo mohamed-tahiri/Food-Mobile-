@@ -10,35 +10,29 @@ import {
     RefreshControl,
     Platform,
 } from 'react-native';
-import { Search, MapPin, SlidersHorizontal, Bell } from 'lucide-react-native';
+import { Search, MapPin, SlidersHorizontal } from 'lucide-react-native';
 import { useRouter, Stack } from 'expo-router';
 import BottomSheet from '@gorhom/bottom-sheet';
 
-// Hooks & Contexts
-import { useNotifications } from '@/hooks/use-notifications';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { restaurantService } from '@/services/restaurant.service';
 import { getCurrentAddress } from '@/services/localisation.service';
 
-// UI Components
 import CardPromo from '@/components/ui/card/CardPromo';
 import CardRestaurant from '@/components/ui/card/CardRestaurant';
 import CardCategory from '@/components/ui/card/CardCategory';
 import FilterBottomSheet from '@/components/ui/FilterBottomSheet';
 
-// Types & Data
 import { offers } from '@/data/dataMocket';
 import { Resto } from '@/types/resto';
 import { Category } from '@/types/category';
 
 export default function HomeScreen() {
-    const { unreadCount, refresh: refreshNotifications } = useNotifications();
     const bottomSheetRef = useRef<BottomSheet>(null);
     const { user } = useAuth(); 
     const router = useRouter();
 
-    // States
     const [displayAddress, setDisplayAddress] = useState("Chargement...");
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -71,8 +65,6 @@ export default function HomeScreen() {
             if (resRestos.success) setDataRestaurants(resRestos.data);
             if (resCats.success) setCategories(resCats.data);
             
-            // Rafraîchir aussi les notifications
-            refreshNotifications();
         } catch (error) {
             console.error("Erreur Home LoadData:", error);
         } finally {
@@ -144,20 +136,6 @@ export default function HomeScreen() {
                     </TouchableOpacity>
 
                     <View style={styles.headerRight}>
-                        {/* Cloche de Notifications avec Badge */}
-                        <TouchableOpacity 
-                            style={[styles.notifBtn, { backgroundColor: cardColor }]} 
-                            onPress={() => router.push('/notifications')}
-                        >
-                            <Bell size={22} color={textColor} />
-                            {unreadCount > 0 && (
-                                <View style={[styles.notifBadge, { backgroundColor: '#FF3B30' }]}>
-                                    <Text style={styles.notifBadgeText}>{unreadCount}</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-
-                        {/* Profile Pic de Mohamed */}
                         <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.8}>
                             <View style={styles.profileContainer}>
                                 <View style={[styles.profilePic, { backgroundColor: primaryColor }]}>
@@ -259,9 +237,6 @@ const styles = StyleSheet.create({
     iconCircle: { padding: 8, borderRadius: 12, marginRight: 10 },
     address: { fontWeight: '800', fontSize: 15, flex: 1 },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    notifBtn: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center', position: 'relative' },
-    notifBadge: { position: 'absolute', top: 12, right: 12, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
-    notifBadgeText: { color: '#FFF', fontSize: 8, fontWeight: 'bold' },
     profileContainer: { position: 'relative' },
     profilePic: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 },
     profileInitial: { color: '#FFF', fontWeight: 'bold', fontSize: 18 },
