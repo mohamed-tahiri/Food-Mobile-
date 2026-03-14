@@ -3,8 +3,10 @@ import React from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { IconSymbol } from '@/components/icon/icon-symbol';
+import { useNotifications } from '@/hooks/use-notifications';
 
 export default function TabLayout() {
+    const { unreadCount } = useNotifications();
     // 1. Récupération des couleurs dynamiques
     const activeColor = useThemeColor({}, 'primary');
     const inactiveColor = useThemeColor({}, 'textMuted');
@@ -27,6 +29,21 @@ export default function TabLayout() {
                     title: 'Accueil',
                     tabBarIcon: ({ color }) => (
                         <IconSymbol size={24} name="house.fill" color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="notifications"
+                options={{
+                    title: 'Alertes',
+                    tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+                    tabBarBadgeStyle: { backgroundColor: '#FF3B30', color: 'white' },
+                    tabBarIcon: ({ color }) => (
+                        <IconSymbol 
+                            size={24} 
+                            name="bell.fill" 
+                            color={color} 
+                        />
                     ),
                 }}
             />
