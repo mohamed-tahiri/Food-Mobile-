@@ -10,6 +10,16 @@ export const orderService = {
     },
 
     /**
+     * Valide un code promo et retourne la réduction applicable sur le montant de la commande
+     */
+    validatePromo: async (code: string, amount: number) => {
+        return apiRequest('/promos/validate', {
+            method: 'POST',
+            body: JSON.stringify({ code, subtotal: amount }),
+        });
+    },
+
+    /**
      * Récupère les détails d'une commande spécifique
      */
     getOrderById: async (id: string): Promise<{ success: boolean; data: Order }> => {
@@ -24,6 +34,8 @@ export const orderService = {
         items: { menuItemId: string; quantity: number }[];
         deliveryAddress: any;
         paymentMethod: string;
+        promoCode?: string | null; 
+        totalAmount?: number;     
         tip?: number;
         deliveryInstructions?: string;
     }): Promise<{ success: boolean; data: Order }> => {

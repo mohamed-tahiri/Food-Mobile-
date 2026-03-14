@@ -18,5 +18,12 @@ export const addressService = {
         return await apiRequest(`/users/addresses/${addressId}`, {
             method: 'DELETE'
         });
-    }
+    },
+
+    setDefault: async (addressId: string) => {
+        return await apiRequest(`/users/addresses/${addressId}/default`, {
+            method: 'PATCH',
+            body: JSON.stringify({ isDefault: true })
+        });
+    },
 };
