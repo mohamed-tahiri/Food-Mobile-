@@ -4,7 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Lock, Mail, ArrowRight } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
-import { authService } from '@/services/auth.service'; // Import du service
+import { authService } from '@/services/auth.service';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -19,7 +19,6 @@ export default function LoginScreen() {
     const cardColor = useThemeColor({}, 'card');
     const backgroundColor = useThemeColor({}, 'background');
 
-    // LOGIQUE REFACTORISÉE
     const handleLogin = async () => {
         if (!email.trim() || !password.trim()) {
             return Alert.alert("Champs requis", "Remplis tes identifiants 🍕");
@@ -94,6 +93,16 @@ export default function LoginScreen() {
                         </>
                     )}
                 </TouchableOpacity>
+
+                {/* --- REDIRECTION VERS REGISTER --- */}
+                <TouchableOpacity 
+                    onPress={() => router.push('/register')} 
+                    style={styles.footerLink}
+                >
+                    <Text style={styles.subtitle}>
+                        Pas encore membre ? <Text style={{ color: primaryColor, fontWeight: 'bold' }}>Rejoins la table 🍽️</Text>
+                    </Text>
+                </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
     );
@@ -129,5 +138,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4
     },
-    loginBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' }
+    loginBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+    footerLink: { marginTop: 20, alignItems: 'center' }
 });
