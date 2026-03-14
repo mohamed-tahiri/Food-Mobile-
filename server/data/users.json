@@ -16,7 +16,7 @@
         "country": "France",
         "latitude": 48.8566,
         "longitude": 2.3522,
-        "isDefault": true
+        "isDefault": false
       },
       {
         "id": "99a55a52-e104-49fb-a1db-aae9d3e74eed",
@@ -26,7 +26,7 @@
         "country": "France",
         "latitude": 48.8566,
         "longitude": 2.3522,
-        "isDefault": false
+        "isDefault": true
       }
     ],
     "notificationsEnabled": true,

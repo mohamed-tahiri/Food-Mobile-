@@ -257,8 +257,8 @@
       "pizza",
       "italien"
     ],
-    "rating": 4.8,
-    "reviewCount": 567,
+    "rating": 2,
+    "reviewCount": 3,
     "priceRange": 2,
     "deliveryTime": {
       "min": 25,

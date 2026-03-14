@@ -54,3 +54,27 @@ export const deleteUserAddress = (req, res) => {
 
     res.json({ success: true, message: "Adresse supprimée" });
 }
+
+export const setDefaultAddress = (req, res) => {
+    const { addressId } = req.params;
+    const userIndex = users.findIndex(u => u.id === req.user.userId);
+
+    console.log("Setting default address for user:", req.user.userId, "Address ID:", addressId);
+
+    if (userIndex === -1) {
+        return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+
+    users[userIndex].addresses = users[userIndex].addresses.map(addr => ({
+        ...addr,
+        isDefault: addr.id === addressId 
+    }));
+
+    saveJSON("users.json", users);
+
+    res.json({ 
+        success: true, 
+        message: "Adresse par défaut mise à jour",
+        data: users[userIndex].addresses 
+    });
+};

@@ -463,5 +463,93 @@
     "createdAt": "2026-02-21T13:43:44.338Z",
     "updatedAt": "2026-02-21T13:45:14.341Z",
     "actualDelivery": "2026-02-21T13:45:14.342Z"
+  },
+  {
+    "id": "4121d22e-dd5a-4c85-abbb-d6e5644e2ee5",
+    "orderNumber": "FS-25779187",
+    "userId": "d1dcaf20-edb1-4776-8fd4-8e7fab0d4999",
+    "restaurantId": "r4",
+    "restaurantName": "Pizza Napoli",
+    "restaurantImage": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800",
+    "items": [
+      {
+        "menuItemId": "p1",
+        "quantity": 2,
+        "menuItem": {
+          "id": "p1",
+          "name": "Margherita",
+          "description": "Sauce tomate, mozzarella fior di latte, basilic frais, huile d'olive",
+          "price": 11.9,
+          "image": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400",
+          "isAvailable": true,
+          "isPopular": true,
+          "isNew": false,
+          "isVegetarian": true,
+          "isVegan": false,
+          "isSpicy": false,
+          "allergens": [
+            "gluten",
+            "lait"
+          ]
+        },
+        "totalPrice": 23.8
+      }
+    ],
+    "status": "delivered",
+    "subtotal": 23.8,
+    "deliveryFee": 0,
+    "serviceFee": 0.99,
+    "tip": 0,
+    "discount": 0,
+    "total": 24.79,
+    "paymentMethod": "card",
+    "deliveryAddress": {
+      "label": "Maison",
+      "street": "123 Rue de Paris",
+      "city": "Paris",
+      "zipCode": "93160"
+    },
+    "deliveryInstructions": "Sonner à l'interphone",
+    "estimatedDelivery": "2026-03-14T22:42:59.187Z",
+    "timeline": [
+      {
+        "status": "pending",
+        "timestamp": "2026-03-14T22:02:59.187Z",
+        "message": "Commande reçue"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-14T22:03:09.192Z",
+        "message": "Commande confirmée par le restaurant"
+      },
+      {
+        "status": "preparing",
+        "timestamp": "2026-03-14T22:03:19.191Z",
+        "message": "Préparation en cours"
+      },
+      {
+        "status": "ready",
+        "timestamp": "2026-03-14T22:03:39.197Z",
+        "message": "Commande prête"
+      },
+      {
+        "status": "picked_up",
+        "timestamp": "2026-03-14T22:03:49.191Z",
+        "message": "Récupérée par le livreur"
+      },
+      {
+        "status": "delivering",
+        "timestamp": "2026-03-14T22:03:59.191Z",
+        "message": "En cours de livraison"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-03-14T22:04:29.192Z",
+        "message": "Livrée"
+      }
+    ],
+    "createdAt": "2026-03-14T22:02:59.187Z",
+    "updatedAt": "2026-03-14T22:04:29.192Z",
+    "actualDelivery": "2026-03-14T22:04:29.192Z"
   }
 ]
